@@ -1,0 +1,22 @@
+{
+  "name": "terrace-heating-backend",
+  "version": "0.0.1",
+  "description": "Node Express backend for Terrace Heating Webapp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "\u0016https://github.com/aleksi-kangas/terrace-heating-backend"
+  },
+  "author": "Aleksi Kangas",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
