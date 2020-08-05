@@ -1,5 +1,5 @@
 import express from 'express';
-import HeatPumpService from '../services/heatPumpService';
+import HeatPumpService from '../services/heatPumpService.js';
 
 const heatPumpRouter = new express.Router();
 

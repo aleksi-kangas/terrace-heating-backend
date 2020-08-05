@@ -1,4 +1,4 @@
-import HeatPump from '../models/heatPump';
+import HeatPump from '../models/heatPump.js';
 
 /**
  * Fetches all entries of HeatPump from MongoDB.
