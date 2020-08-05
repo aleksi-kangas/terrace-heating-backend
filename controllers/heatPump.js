@@ -1,5 +1,5 @@
 import express from 'express';
-import HeatPump from '../models/heatPump';
+import HeatPumpService from '../services/heatPumpService';
 
 const heatPumpRouter = new express.Router();
 
@@ -8,8 +8,8 @@ const heatPumpRouter = new express.Router();
  * @return {Array<Object>} Heat pump data
  */
 heatPumpRouter.get('/', async (req, res) => {
-  const data = await HeatPump.find({});
-  return res.json(data.map((entry) => entry.toJSON()));
+  const data = await HeatPumpService.getAll();
+  return res.json(data);
 });
 
 export default heatPumpRouter;
