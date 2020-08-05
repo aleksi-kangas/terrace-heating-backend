@@ -1,8 +1,8 @@
 import ModBus from 'jsmodbus';
 import net from 'net';
 import lodash from 'lodash';
-import config from './config';
-import HeatPump from '../models/heatPump';
+import config from './config.js';
+import HeatPump from '../models/heatPump.js';
 
 const socket = new net.Socket();
 const client = new ModBus.client.TCP(socket);
@@ -49,17 +49,18 @@ socket.on('connect', async () => {
   // eslint-disable-next-line no-underscore-dangle
   const data = res.response._body.valuesArray;
   socket.end();
+  return data;
+});
+
+const queryModBus = async () => {
+  const data = await socket.connect({
+    host: config.MODBUS_HOST,
+    port: config.MODBUS_PORT,
+  });
   /* Parse queried data and save it to MongoDB */
   const parsedData = parseModBusQuery(data);
   const heatPumpData = new HeatPump(parsedData);
   await heatPumpData.save();
-});
-
-const queryModBus = async () => {
-  await socket.connect({
-    host: config.MODBUS_HOST,
-    port: config.MODBUS_PORT,
-  });
 };
 
 export default queryModBus;

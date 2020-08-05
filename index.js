@@ -1,7 +1,10 @@
-import http from 'http';
-import config from './utils/config';
-import app from './app';
+import cron from 'node-cron';
+import config from './utils/config.js';
+import app from './app.js';
+import queryModBus from './utils/modBus.js';
 
-const server = http.createServer(app);
+cron.schedule('* * * * *', async () => {
+  await queryModBus();
+}, {});
 
-server.listen(config.PORT);
+app.listen(config.PORT);
