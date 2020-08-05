@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+/* eslint-disable no-underscore-dangle,no-param-reassign */
+
 /**
  * Mongoose Schema for heat pump data.
  *
@@ -16,7 +18,7 @@ const heatPumpSchema = new mongoose.Schema({
   lowerTankTemp: { type: Number, required: true },
   upperTankTemp: { type: Number, required: true },
   groundLoopTempInput: { type: Number, required: true },
-  groundLoopTempOutput: { type: Number, required: true }
+  groundLoopTempOutput: { type: Number, required: true },
 });
 
 /**
@@ -27,10 +29,12 @@ const heatPumpSchema = new mongoose.Schema({
  */
 heatPumpSchema.set('toJSON', {
   transform: (doc, obj) => {
-    obj.id = obj._id.toString();  // Rename id property
+    obj.id = obj._id.toString(); // Rename id property
     delete obj._id;
-    delete obj.__v;  // Delete version property
-  }
+    delete obj.__v; // Delete version property
+  },
 });
 
-export const HeatPump = mongoose.model('HeatPump', heatPumpSchema);
+const HeatPump = mongoose.model('HeatPump', heatPumpSchema);
+
+export default HeatPump;

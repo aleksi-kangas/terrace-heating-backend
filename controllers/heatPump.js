@@ -1,7 +1,7 @@
-import Router from 'express';
-import { HeatPump } from '../models/heatPump.js';
+import express from 'express';
+import HeatPump from '../models/heatPump';
 
-const heatPumpRouter = Router();
+const heatPumpRouter = new express.Router();
 
 /**
  * Used for fetching all heat pump data.
@@ -9,5 +9,7 @@ const heatPumpRouter = Router();
  */
 heatPumpRouter.get('/', async (req, res) => {
   const data = await HeatPump.find({});
-  return res.json(data.map(entry => entry.toJSON()))
+  return res.json(data.map((entry) => entry.toJSON()));
 });
+
+export default heatPumpRouter;
