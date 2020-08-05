@@ -24,7 +24,8 @@ const signUnsignedValues = (value) => {
 };
 
 /**
- *
+ * Parses and signs predetermined heat pump data from a ModBus query result.
+ * @return {Object} contains predetermined signed heat pump data
  */
 const parseModBusQuery = (data) => {
   const signedData = lodash.map(data, signUnsignedValues);
