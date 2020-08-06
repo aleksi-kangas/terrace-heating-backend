@@ -4,7 +4,7 @@ import HeatPumpService from '../services/heatPumpService.js';
 const heatPumpRouter = new express.Router();
 
 /**
- * Used for fetching all heat pump data.
+ * Endpoint for fetching all heat pump data.
  * @return {Array<Object>} Heat pump data
  */
 heatPumpRouter.get('/', async (req, res) => {
