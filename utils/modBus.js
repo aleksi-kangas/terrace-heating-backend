@@ -14,7 +14,7 @@ const client = new ModBus.client.TCP(socket);
  */
 const signUnsignedValues = (value) => {
   let signed = value;
-  // Sign 256 bit values
+  // Sign 16 bit values
   if (value > 65535 / 2) {
     signed = value - 65536;
   }
