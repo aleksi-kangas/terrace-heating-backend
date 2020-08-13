@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import config from './utils/config.js';
+import middleware from './utils/middleware.js';
 // Routers
 import heatPumpRouter from './controllers/heatPump.js';
 
@@ -17,6 +18,7 @@ mongoose
 
 // Middleware
 app.use(express.json());
+app.use(middleware.errorHandler());
 
 // Routes
 app.use('/api/heat-pump', heatPumpRouter);
