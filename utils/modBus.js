@@ -1,6 +1,5 @@
 import ModBus from 'jsmodbus';
 import net from 'net';
-import lodash from 'lodash';
 import config from './config.js';
 import HeatPump from '../models/heatPump.js';
 
@@ -27,40 +26,37 @@ const signUnsignedValues = (value) => {
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} contains predetermined signed heat pump data
  */
-const parseModBusQuery = (data) => {
-  const signedData = lodash.map(data, signUnsignedValues);
-  return {
-    time: new Date(),
-    outsideTemp: signedData[0],
-    hotGasTemp: signedData[1],
-    heatDistCircuitTemp1: signedData[4],
-    heatDistCircuitTemp2: signedData[5],
-    lowerTankTemp: signedData[16],
-    upperTankTemp: signedData[17],
-    insideTemp: signedData[73],
-    groundLoopTempOutput: signedData[97],
-    groundLoopTempInput: signedData[98],
-    heatDistCircuitTemp3: signedData[116],
-  };
-};
+const parseModBusQuery = (data) => ({
+  time: new Date(),
+  outsideTemp: signUnsignedValues(data[0]),
+  hotGasTemp: signUnsignedValues(data[1]),
+  heatDistCircuitTemp1: signUnsignedValues(data[4]),
+  heatDistCircuitTemp2: signUnsignedValues(data[5]),
+  lowerTankTemp: signUnsignedValues(data[16]),
+  upperTankTemp: signUnsignedValues(data[17]),
+  insideTemp: signUnsignedValues(data[73]),
+  groundLoopTempOutput: signUnsignedValues(data[97]),
+  groundLoopTempInput: signUnsignedValues(data[98]),
+  heatDistCircuitTemp3: signUnsignedValues(data[116]),
+});
 
 socket.on('connect', async () => {
   const res = await client.readHoldingRegisters(1, 120);
   // eslint-disable-next-line no-underscore-dangle
-  const data = res.response._body.valuesArray;
+  const data = res.response._body._valuesAsArray;
   socket.end();
+  // Parse queried data and save it to MongoDB
+  const parsedData = parseModBusQuery(data);
+  const heatPumpData = new HeatPump(parsedData);
+  await heatPumpData.save();
   return data;
 });
 
 const queryModBus = async () => {
-  const data = await socket.connect({
+  await socket.connect({
     host: config.MODBUS_HOST,
     port: config.MODBUS_PORT,
   });
-  /* Parse queried data and save it to MongoDB */
-  const parsedData = parseModBusQuery(data);
-  const heatPumpData = new HeatPump(parsedData);
-  await heatPumpData.save();
 };
 
 export default queryModBus;
