@@ -1,7 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import 'express-async-errors';
 import config from './utils/config.js';
 import middleware from './utils/middleware.js';
+
 // Routers
 import heatPumpRouter from './controllers/heatPump.js';
 
@@ -11,6 +13,7 @@ const app = express();
 mongoose
   .connect(config.MONGODB_URI, {
     useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
   .catch((e) => {
     console.error(e.message);
@@ -18,9 +21,12 @@ mongoose
 
 // Middleware
 app.use(express.json());
-app.use(middleware.errorHandler());
 
 // Routes
 app.use('/api/heat-pump', heatPumpRouter);
+
+// Middleware
+app.use(middleware.unknownEndpoint);
+app.use(middleware.errorHandler);
 
 export default app;
