@@ -4,7 +4,12 @@ import app from './app.js';
 import queryModBus from './utils/modBus.js';
 
 cron.schedule('* * * * *', async () => {
-  await queryModBus();
+  try {
+    await queryModBus();
+    console.log('Query complete.');
+  } catch (exception) {
+    console.error('Query could not be completed:', exception.message);
+  }
 }, {});
 
 app.listen(config.PORT);
