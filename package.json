@@ -4,11 +4,11 @@
   "description": "Node Express backend for Terrace Heating Webapp",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development nodemon index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "repository": {
     "type": "git",
@@ -18,12 +18,17 @@
   "author": "Aleksi Kangas",
   "license": "MIT",
   "dependencies": {
+    "@jest/globals": "^26.4.0",
+    "bcryptjs": "^2.4.3",
+    "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "express-async-errors": "^3.1.1",
     "http": "0.0.1-security",
     "jsmodbus": "^4.0.4",
-    "lodash": "^4.17.19",
+    "moment": "^2.27.0",
     "mongoose": "^5.9.27",
+    "mongoose-unique-validator": "^2.0.3",
     "node-cron": "^2.0.3"
   },
   "devDependencies": {
@@ -33,6 +38,8 @@
     "eslint-plugin-jsx-a11y": "^6.3.0",
     "eslint-plugin-react": "^7.20.0",
     "eslint-plugin-react-hooks": "^4.0.0",
-    "nodemon": "^2.0.4"
+    "jest": "^26.4.0",
+    "nodemon": "^2.0.4",
+    "supertest": "^4.0.2"
   }
 }
