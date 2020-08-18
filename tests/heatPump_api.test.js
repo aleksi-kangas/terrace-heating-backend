@@ -1,3 +1,4 @@
+/* eslint no-underscore-dangle: 0 */
 import supertest from 'supertest';
 import mongoose from 'mongoose';
 import {
@@ -74,16 +75,13 @@ describe('fetching all heat pump data', () => {
     test('data does not include __v field of MongoDB', async () => {
       const result = await api.get(apiUrl);
       result.body.forEach((entry) => {
-        // eslint-disable-next-line no-underscore-dangle
         expect(entry.__v).not.toBeDefined();
       });
     });
     test('data includes id field and not _id field', async () => {
       const result = await api.get(apiUrl);
       result.body.forEach((entry) => {
-        // eslint-disable-next-line no-underscore-dangle
         expect(entry.id).toBeDefined();
-        // eslint-disable-next-line no-underscore-dangle
         expect(entry._id).not.toBeDefined();
       });
     });
