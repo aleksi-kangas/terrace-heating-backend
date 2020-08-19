@@ -1,5 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import cors from 'cors';
 import 'express-async-errors';
 import config from './utils/config.js';
 import middleware from './utils/middleware.js';
@@ -20,6 +21,7 @@ mongoose
   });
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 
 // Routes
