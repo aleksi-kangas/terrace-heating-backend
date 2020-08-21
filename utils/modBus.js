@@ -3,9 +3,6 @@ import net from 'net';
 import config from './config.js';
 import HeatPump from '../models/heatPump.js';
 
-const socket = new net.Socket();
-const client = new ModBus.client.TCP(socket);
-
 /**
  * Helper function for signing an unsigned number.
  * @param value number to be signed
@@ -40,23 +37,37 @@ const parseModBusQuery = (data) => ({
   heatDistCircuitTemp3: signUnsignedValues(data[116]),
 });
 
-socket.on('connect', async () => {
-  const res = await client.readHoldingRegisters(1, 120);
-  // eslint-disable-next-line no-underscore-dangle
-  const data = res.response._body._valuesAsArray;
-  socket.end();
-  // Parse queried data and save it to MongoDB
-  const parsedData = parseModBusQuery(data);
-  const heatPumpData = new HeatPump(parsedData);
-  await heatPumpData.save();
-  return data;
-});
+/**
+ * Exports a class representing ModBusService.
+ *
+ * The class constructor gets a reference to an socket.io object,
+ * which is used in the queryModbus method.
+ * @param io reference to a socket.io object
+ */
+export default (io) => class ModBusService {
+  constructor() {
+    this.io = io;
+    this.socket = new net.Socket();
+    this.client = new ModBus.client.TCP(this.socket);
+    this.socket.on('connect', async () => {
+      const res = await this.client.readHoldingRegisters(1, 120);
+      // eslint-disable-next-line no-underscore-dangle
+      const data = res.response._body._valuesAsArray;
+      // Parse queried data and save it to MongoDB
+      const parsedData = parseModBusQuery(data);
+      const heatPumpData = new HeatPump(parsedData);
+      const savedData = await heatPumpData.save();
+      this.io.emit('DataFromAPI', savedData);
+      console.log(`Query complete. ${savedData.time}`);
+      this.socket.end();
+    });
+    this.socket.on('error', console.error);
+  }
 
-const queryModBus = async () => {
-  await socket.connect({
-    host: config.MODBUS_HOST,
-    port: config.MODBUS_PORT,
-  });
+  queryModBus() {
+    this.socket.connect({
+      host: config.MODBUS_HOST,
+      port: config.MODBUS_PORT,
+    });
+  }
 };
-
-export default queryModBus;
