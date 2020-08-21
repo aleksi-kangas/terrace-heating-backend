@@ -12,6 +12,7 @@ const heatPumpRouter = new express.Router();
  * @return {Array<Object>} Heat pump data
  */
 heatPumpRouter.get('/', async (req, res) => {
+  // Optional query strings
   const date = {
     year: req.query.year,
     month: req.query.month,
