@@ -8,8 +8,8 @@ import HeatPump from '../models/heatPump.js';
  * by the request's query strings year, month and day.
  * If any of those are absent, the method retrieves all heat pump entries from MongoDB.
  *
- * @param date {Object} with properties year, month, day
- * @return {Array<Object>} Heat pump data entries within the last 24 hours
+ * @param {Object} date - with properties year, month, day
+ * @return {Array<Object>} - contains heat pump data entries from the given date onwards (or all)
  */
 const getData = async (date) => {
   // If any of the properties of date are missing,

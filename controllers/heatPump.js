@@ -9,7 +9,7 @@ const heatPumpRouter = new express.Router();
  * Optional query strings year, month and day determine a date,
  * that is used for filtering and including heat pump data entries from that date onwards.
  *
- * @return {Array<Object>} Heat pump data
+ * @return {Array<Object>} - contains heat pump data from the given date onwards
  */
 heatPumpRouter.get('/', async (req, res) => {
   // Optional query strings

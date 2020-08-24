@@ -5,8 +5,8 @@ import HeatPump from '../models/heatPump.js';
 
 /**
  * Helper function for signing an unsigned number.
- * @param value number to be signed
- * @return {number} signed value
+ * @param value - number to be signed
+ * @return {number} - the signed representation of the input value
  */
 const signUnsignedValues = (value) => {
   let signed = value;
@@ -21,7 +21,7 @@ const signUnsignedValues = (value) => {
 
 /**
  * Parses and signs predetermined heat pump data from a ModBus query result.
- * @return {Object} contains predetermined signed heat pump data
+ * @return {Object} - contains predetermined signed heat pump data
  */
 const parseModBusQuery = (data) => ({
   time: new Date(),
@@ -38,11 +38,11 @@ const parseModBusQuery = (data) => ({
 });
 
 /**
- * Exports a class representing ModBusService.
+ * Exports a class representing ModBusService,
+ * that enables communication to the heat pump via ModBus protocol.
  *
- * The class constructor gets a reference to an socket.io object,
- * which is used in the queryModbus method.
- * @param io reference to a socket.io object
+ * @constructor
+ * @param io - reference to a socket.io object
  */
 export default (io) => class ModBusService {
   constructor() {
@@ -57,13 +57,18 @@ export default (io) => class ModBusService {
       const parsedData = parseModBusQuery(data);
       const heatPumpData = new HeatPump(parsedData);
       const savedData = await heatPumpData.save();
-      this.io.emit('DataFromAPI', savedData);
+      this.io.emit('heatPumpData', savedData);
       console.log(`Query complete. ${savedData.time}`);
       this.socket.end();
     });
     this.socket.on('error', console.error);
   }
 
+  /**
+   * Responsible for establishing a connection to the heat pump via ModBus protocol.
+   * Queries predetermined registers and signs the numerical data.
+   * @method queryModBus
+   */
   queryModBus() {
     this.socket.connect({
       host: config.MODBUS_HOST,
