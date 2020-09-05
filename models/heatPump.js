@@ -9,16 +9,16 @@ import mongoose from 'mongoose';
  */
 const heatPumpSchema = new mongoose.Schema({
   time: { type: Date, required: true },
-  outsideTemp: { type: Number, required: true },
-  insideTemp: { type: Number, required: true },
-  hotGasTemp: { type: Number, required: true },
-  heatDistCircuitTemp1: { type: Number, required: true },
-  heatDistCircuitTemp2: { type: Number, required: true },
-  heatDistCircuitTemp3: { type: Number, required: true },
-  lowerTankTemp: { type: Number, required: true },
-  upperTankTemp: { type: Number, required: true },
-  groundLoopTempInput: { type: Number, required: true },
-  groundLoopTempOutput: { type: Number, required: true },
+  outsideTemp: { type: Number },
+  insideTemp: { type: Number },
+  hotGasTemp: { type: Number },
+  heatDistCircuitTemp1: { type: Number },
+  heatDistCircuitTemp2: { type: Number },
+  heatDistCircuitTemp3: { type: Number },
+  lowerTankTemp: { type: Number },
+  upperTankTemp: { type: Number },
+  groundLoopTempInput: { type: Number },
+  groundLoopTempOutput: { type: Number },
 });
 
 /**

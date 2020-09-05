@@ -50,16 +50,25 @@ export default (io) => class ModBusService {
     this.socket = new net.Socket();
     this.client = new ModBus.client.TCP(this.socket);
     this.socket.on('connect', async () => {
-      const res = await this.client.readHoldingRegisters(1, 120);
-      // eslint-disable-next-line no-underscore-dangle
-      const data = res.response._body._valuesAsArray;
-      // Parse queried data and save it to MongoDB
-      const parsedData = parseModBusQuery(data);
-      const heatPumpData = new HeatPump(parsedData);
-      const savedData = await heatPumpData.save();
-      this.io.emit('heatPumpData', savedData);
-      console.log(`Query complete. ${savedData.time}`);
-      this.socket.end();
+      try {
+        const res = await this.client.readHoldingRegisters(1, 120);
+        // eslint-disable-next-line no-underscore-dangle
+        const data = res.response._body._valuesAsArray;
+        // Parse queried data and save it to MongoDB
+        const parsedData = parseModBusQuery(data);
+        const heatPumpData = new HeatPump(parsedData);
+        const savedData = await heatPumpData.save();
+        this.io.emit('heatPumpData', savedData);
+        console.log(`Query complete. ${savedData.time}`);
+        this.socket.end();
+      } catch (exception) {
+        const timeStampData = { time: new Date() };
+        const heatPumpData = new HeatPump(timeStampData);
+        const savedData = await heatPumpData.save();
+        this.io.emit('heatPumpData', savedData);
+        console.log(`Query could not be finished. Empty timestamp saved. ${savedData.time}`);
+        this.socket.end();
+      }
     });
     this.socket.on('error', console.error);
   }
