@@ -12,11 +12,15 @@ import HeatPump from '../models/heatPump.js';
  * @return {Array<Object>} - contains heat pump data entries from the given date onwards (or all)
  */
 const getData = async (date) => {
+  // If any of the properties of date are missing, retrieve all entries of heat pump data.
+  if (!date.year || !date.month || !date.day) {
+    return HeatPump.find({});
+  }
+
   const dateThreshold = moment(`${date.year}-${date.month}-${date.day}`).format('YYYY-MM-DD');
 
-  // If any of the properties of date are missing or the date itself is not valid,
-  // retrieve all entries of heat pump data.
-  if (!date.year || !date.month || !date.day || !dateThreshold.isValid()) {
+  // If the date is not valid, retrieve all entries of heat pump data.
+  if (!dateThreshold.isValid()) {
     return HeatPump.find({});
   }
 
