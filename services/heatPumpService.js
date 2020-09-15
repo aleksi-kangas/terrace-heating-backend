@@ -17,7 +17,7 @@ const getData = async (date) => {
     return HeatPump.find({});
   }
 
-  const dateThreshold = moment(`${date.year}-${date.month}-${date.day}`).format('YYYY-MM-DD');
+  const dateThreshold = moment(`${date.year}-${date.month}-${date.day}`);
 
   // If the date is not valid, retrieve all entries of heat pump data.
   if (!dateThreshold.isValid()) {
