@@ -7,6 +7,7 @@ import middleware from './utils/middleware.js';
 
 // Routers
 import heatPumpRouter from './controllers/heatPump.js';
+import loginRouter from './controllers/login.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/heat-pump', heatPumpRouter);
+app.use('/api/login', loginRouter);
 
 // Middleware
 app.use(middleware.unknownEndpoint);

@@ -14,6 +14,7 @@ const config = {
   PORT: process.env.PORT,
   MODBUS_HOST: process.env.MODBUS_HOST,
   MODBUS_PORT: process.env.MODBUS_PORT,
+  JWT: process.env.JWT,
 };
 
 export default config;
