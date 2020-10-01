@@ -1,11 +1,20 @@
 import Alert from '../models/alert.js';
 
 /**
+ * Fetches all alerts from MongoDB.
+ * @return {Array<Object>} alerts
+ */
+const getAll = async () => {
+  const alerts = await Alert.find({}).populate({ path: 'user', select: ['id'] });
+  return alerts.map((alert) => alert.toJSON());
+};
+
+/**
  * Fetches all alerts for the specified user from MongoDB.
  * @return {Array<Object>} alerts
  */
-const getAll = async (user) => {
-  const alerts = await Alert.find({ user }).populate({ path: 'user', select: ['id'] });
+const getUserAlerts = async (user) => {
+  const alerts = await Alert.find({ user }).populate({ path: 'user', select: ['id', 'username'] });
   return alerts.map((alert) => alert.toJSON());
 };
 
@@ -26,5 +35,6 @@ const create = async (variable, lowerLimit, upperLimit, user) => {
 
 export default {
   getAll,
+  getUserAlerts,
   create,
 };

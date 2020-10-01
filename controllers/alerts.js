@@ -7,8 +7,17 @@ const alertRouter = new express.Router();
  * Endpoint for fetching all alerts.
  * @return {Array<Object>} alerts - containing all alerts of the user
  */
+alertRouter.get('/', async (request, response) => {
+  const alerts = await alertService.getAll();
+  return response.json(alerts);
+});
+
+/**
+ * Endpoint for fetching all alerts of a specific user.
+ * @return {Array<Object>} alerts - containing all alerts of the user
+ */
 alertRouter.get('/:user', async (request, response) => {
-  const alerts = await alertService.getAll(request.params.user);
+  const alerts = await alertService.getUserAlerts(request.params.user);
   return response.json(alerts);
 });
 
