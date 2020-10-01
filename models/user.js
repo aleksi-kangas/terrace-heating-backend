@@ -6,8 +6,10 @@ import uniqueValidator from 'mongoose-unique-validator';
 /**
  * Mongoose Schema for user.
  *
- * @property username string
- * @property passwordHash hashed password by bcryptjs-library
+ * @property username - user's username
+ * @property name - user's name
+ * @property passwordHash - hashed password by bcryptjs-library
+ * @property alerts - array of the user's alerts
  */
 const userSchema = new mongoose.Schema({
   username: {
@@ -16,10 +18,19 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  name: {
+    type: String,
+    minlength: 3,
+    required: true,
+  },
   passwordHash: {
     type: String,
     required: true,
   },
+  alerts: [{
+    type: mongoose.Schema.Types.ObjectID,
+    ref: 'Alert',
+  }],
 });
 
 userSchema.plugin(uniqueValidator);
