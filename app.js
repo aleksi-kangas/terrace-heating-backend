@@ -8,7 +8,6 @@ import middleware from './utils/middleware.js';
 // Routers
 import heatPumpRouter from './controllers/heatPump.js';
 import loginRouter from './controllers/login.js';
-import alertRouter from './controllers/alerts.js';
 
 const app = express();
 
@@ -29,7 +28,6 @@ app.use(express.json());
 // Routes
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/login', loginRouter);
-app.use('/api/alerts', alertRouter);
 
 // Middleware
 app.use(middleware.unknownEndpoint);

@@ -14,10 +14,11 @@ const getAll = async () => {
 /**
  * Used to create a new user and save it to the database.
  * @param username string
+ * @param name string
  * @param password string
  * @return {Promise<void|Promise|*>} saved user
  */
-const create = async (username, password) => {
+const create = async (username, name, password) => {
   if (!password || password.length < 3) {
     // Throw validation error
     const validationError = new mongoose.Error.ValidationError(null);
@@ -31,6 +32,7 @@ const create = async (username, password) => {
   const passwordHash = await bcryptjs.hash(password, 10);
   const user = new User({
     username,
+    name,
     passwordHash,
   });
   return user.save();
