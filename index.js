@@ -3,13 +3,12 @@ import http from 'http';
 import socketIO from 'socket.io';
 import config from './utils/config.js';
 import app from './app.js';
-import ModBus from './utils/modBus.js';
+import ModBusQueryService from './utils/modBusQueryService.js';
 
 const server = http.createServer(app);
 const io = socketIO(server);
 
-const ModBusService = ModBus(io);
-const modBusService = new ModBusService();
+const modBusQueryService = new ModBusQueryService(io);
 
 io.origins('*:*');
 
@@ -20,7 +19,7 @@ io.on('connection', (socket) => {
 
 cron.schedule('* * * * *', async () => {
   try {
-    await modBusService.queryModBus();
+    await modBusQueryService.queryData();
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
   }

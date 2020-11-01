@@ -22,4 +22,9 @@ heatPumpRouter.get('/', async (req, res) => {
   return res.json(data);
 });
 
+heatPumpRouter.post('/', async (req, res) => {
+  await HeatPumpService.toggleCircuit3();
+  return res.status(200).end();
+});
+
 export default heatPumpRouter;

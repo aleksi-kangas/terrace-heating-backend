@@ -1,7 +1,7 @@
-import ModBus from 'jsmodbus';
 import net from 'net';
-import config from './config.js';
+import ModBus from 'jsmodbus';
 import HeatPump from '../models/heatPump.js';
+import config from './config.js';
 
 /**
  * Helper function for signing an unsigned number.
@@ -23,7 +23,7 @@ const signUnsignedValues = (value) => {
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} - contains predetermined signed heat pump data
  */
-const parseModBusQuery = (data) => ({
+const parseModBusQuery = (data, activeHeatDistCircuits) => ({
   time: new Date(),
   outsideTemp: signUnsignedValues(data[0]),
   hotGasTemp: signUnsignedValues(data[1]),
@@ -35,37 +35,35 @@ const parseModBusQuery = (data) => ({
   groundLoopTempOutput: signUnsignedValues(data[97]),
   groundLoopTempInput: signUnsignedValues(data[98]),
   heatDistCircuitTemp3: signUnsignedValues(data[116]),
+  activeHeatDistCircuits,
 });
 
-/**
- * Exports a class representing ModBusService,
- * that enables communication to the heat pump via ModBus protocol.
- *
- * @constructor
- * @param io - reference to a socket.io object
- */
-export default (io) => class ModBusService {
-  constructor() {
-    this.io = io;
+class ModBusQueryService {
+  constructor(ioSocket) {
+    this.ioSocket = ioSocket;
     this.socket = new net.Socket();
     this.client = new ModBus.client.TCP(this.socket);
     this.socket.on('connect', async () => {
       try {
-        const res = await this.client.readHoldingRegisters(1, 120);
+        const values = await this.client.readHoldingRegisters(1, 120);
+        const circuits = await this.client.readHoldingRegisters(5100, 1);
         // eslint-disable-next-line no-underscore-dangle
-        const data = res.response._body._valuesAsArray;
+        const data = values.response._body._valuesAsArray;
+        // eslint-disable-next-line no-underscore-dangle
+        const activeHeatDistCircuits = circuits.response._body._valuesAsArray[0];
+
         // Parse queried data and save it to MongoDB
-        const parsedData = parseModBusQuery(data);
+        const parsedData = parseModBusQuery(data, activeHeatDistCircuits);
         const heatPumpData = new HeatPump(parsedData);
         const savedData = await heatPumpData.save();
-        this.io.emit('heatPumpData', savedData);
+        this.ioSocket.emit('heatPumpData', savedData);
         console.log(`Query complete. ${savedData.time}`);
         this.socket.end();
       } catch (exception) {
         const timeStampData = { time: new Date() };
         const heatPumpData = new HeatPump(timeStampData);
         const savedData = await heatPumpData.save();
-        this.io.emit('heatPumpData', savedData);
+        this.ioSocket.emit('heatPumpData', savedData);
         console.log(`Query could not be finished. Empty timestamp saved. ${savedData.time}`);
         this.socket.end();
       }
@@ -73,15 +71,12 @@ export default (io) => class ModBusService {
     this.socket.on('error', console.error);
   }
 
-  /**
-   * Responsible for establishing a connection to the heat pump via ModBus protocol.
-   * Queries predetermined registers and signs the numerical data.
-   * @method queryModBus
-   */
-  queryModBus() {
+  queryData() {
     this.socket.connect({
       host: config.MODBUS_HOST,
       port: config.MODBUS_PORT,
     });
   }
-};
+}
+
+export default ModBusQueryService;
