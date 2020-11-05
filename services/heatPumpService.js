@@ -1,8 +1,6 @@
 import moment from 'moment';
 import HeatPump from '../models/heatPump.js';
-import ModBusModifyService from '../utils/modBusModifyService.js';
-
-const mosBusModifyService = new ModBusModifyService();
+import ModBusService from '../utils/modBusService.js';
 
 /**
  * Fetches heat pump data entries from the given date onwards.
@@ -33,8 +31,10 @@ const getData = async (date) => {
   return HeatPump.find({ time: { $gt: dateLimit } });
 };
 
-const toggleCircuit3 = async () => mosBusModifyService.toggleHeatDistCircuit3();
+const getActiveCircuits = async () => ModBusService.queryActiveCircuits();
+
+const toggleCircuitThree = async () => ModBusService.toggleCircuitThree();
 
 export default {
-  getData, toggleCircuit3,
+  getData, getActiveCircuits, toggleCircuitThree,
 };
