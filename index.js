@@ -3,12 +3,10 @@ import http from 'http';
 import socketIO from 'socket.io';
 import config from './utils/config.js';
 import app from './app.js';
-import ModBusService from './utils/modBusService.js';
+import ModBusService from './utils/modBus.js';
 
 const server = http.createServer(app);
 const io = socketIO(server);
-
-ModBusService.setSocketIo(io);
 
 io.origins('*:*');
 
@@ -19,7 +17,9 @@ io.on('connection', (socket) => {
 
 cron.schedule('* * * * *', async () => {
   try {
-    await ModBusService.queryData();
+    const queriedData = await ModBusService.queryHeatPumpValues();
+    io.emit('heatPumpData', queriedData);
+    console.log(`Query complete. ${queriedData.time}`);
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
   }
