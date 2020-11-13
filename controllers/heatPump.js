@@ -27,7 +27,11 @@ heatPumpRouter.get('/circuits', async (req, res) => {
   return res.json(data);
 });
 
-heatPumpRouter.post('/circuits', async (req, res) => {
+heatPumpRouter.post('/circuits/', async (req, res) => {
+  const activeCircuits = req.query.active;
+  if (activeCircuits !== '2' && activeCircuits !== '3') {
+    return res.status(400).end();
+  }
   await HeatPumpService.toggleCircuitThree();
   return res.status(200).end();
 });
