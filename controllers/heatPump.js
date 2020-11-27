@@ -1,5 +1,12 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import HeatPumpService from '../services/heatPumpService.js';
+import User from '../models/user.js';
+
+const authorize = async (request) => {
+  const decodedToken = jwt.verify(request.token, process.env.JWT);
+  return User.findById(decodedToken.id);
+};
 
 const heatPumpRouter = new express.Router();
 
@@ -22,18 +29,34 @@ heatPumpRouter.get('/', async (req, res) => {
   return res.json(data);
 });
 
-heatPumpRouter.get('/circuits', async (req, res) => {
-  const data = await HeatPumpService.getActiveCircuits();
-  return res.json(data);
+heatPumpRouter.get('/circuits', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const data = await HeatPumpService.getActiveCircuits();
+      return res.json(data);
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
 });
 
-heatPumpRouter.post('/circuits/', async (req, res) => {
-  const activeCircuits = req.query.active;
-  if (activeCircuits !== '2' && activeCircuits !== '3') {
-    return res.status(400).end();
+heatPumpRouter.post('/circuits', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const activeCircuits = req.body.circuits;
+      if (activeCircuits !== 2 && activeCircuits !== 3) {
+        return res.status(400).end();
+      }
+      await HeatPumpService.toggleCircuitThree();
+      return res.status(200).end();
+    }
+  } catch (exception) {
+    next(exception);
   }
-  await HeatPumpService.toggleCircuitThree();
-  return res.status(200).end();
+  return res.status(401);
 });
 
 export default heatPumpRouter;

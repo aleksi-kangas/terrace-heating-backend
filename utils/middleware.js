@@ -16,9 +16,18 @@ const errorHandler = (error, request, response, next) => {
   return next(error);
 };
 
+const authTokenExtractor = (request, response, next) => {
+  const authHeader = request.get('authorization');
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    request.token = authHeader.substring(7);
+  }
+  next();
+};
+
 const unknownEndpoint = (request, response) => response.status(404).json({ error: 'unknown endpoint' });
 
 export default {
+  authTokenExtractor,
   errorHandler,
   unknownEndpoint,
 };

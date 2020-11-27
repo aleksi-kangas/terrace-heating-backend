@@ -24,6 +24,7 @@ mongoose
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(middleware.authTokenExtractor);
 
 // Routes
 app.use('/api/heat-pump', heatPumpRouter);
