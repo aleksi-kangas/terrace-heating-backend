@@ -18,15 +18,23 @@ const heatPumpRouter = new express.Router();
  *
  * @return {Array<Object>} - contains heat pump data from the given date onwards
  */
-heatPumpRouter.get('/', async (req, res) => {
-  // Optional query strings
-  const date = {
-    year: req.query.year,
-    month: req.query.month,
-    day: req.query.day,
-  };
-  const data = await HeatPumpService.getData(date);
-  return res.json(data);
+heatPumpRouter.get('/', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      // Optional query strings
+      const date = {
+        year: req.query.year,
+        month: req.query.month,
+        day: req.query.day,
+      };
+      const data = await HeatPumpService.getData(date);
+      return res.json(data);
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
 });
 
 heatPumpRouter.get('/circuits', async (req, res, next) => {
