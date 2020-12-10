@@ -1,12 +1,6 @@
 /**
  * Middleware for handling errors.
- * @param error
- * @param request
- * @param response
- * @param next
- * @return {any}
  */
-
 const errorHandler = (error, request, response, next) => {
   if (error.name === 'ValidationError') {
     return response
@@ -21,6 +15,9 @@ const errorHandler = (error, request, response, next) => {
   return next(error);
 };
 
+/**
+ * Extracts authorization token out of the request header and places it in token-property.
+ */
 const authTokenExtractor = (request, response, next) => {
   const authHeader = request.get('authorization');
   if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
@@ -29,6 +26,9 @@ const authTokenExtractor = (request, response, next) => {
   next();
 };
 
+/**
+ * Responds to a request pointing to an unknown endpoint with status code 404.
+ */
 const unknownEndpoint = (request, response) => response.status(404).json({ error: 'unknown endpoint' });
 
 export default {
