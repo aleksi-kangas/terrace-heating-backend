@@ -2,6 +2,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
 
+/**
+ * Responsible for logging in a user if the given credentials are correct.
+ * @param credentials - object containing properties username and password
+ * @return {Object} - containing properties name, id, username and token
+ */
 const login = async (credentials) => {
   const user = await User.findOne({ username: credentials.username });
   // Compare password
