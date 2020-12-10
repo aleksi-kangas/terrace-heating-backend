@@ -15,6 +15,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log(`Client disconnected ${socket.client.id}`));
 });
 
+/**
+ * A cron-job for querying the data from the heat pump each minute.
+ */
 cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusService.queryHeatPumpValues();
