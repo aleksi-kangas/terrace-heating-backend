@@ -1,6 +1,8 @@
 import ModBus from 'modbus-serial';
+import moment from 'moment';
 import config from './config.js';
 import HeatPump from '../models/heatPump.js';
+import CompressorStatus from '../models/compressorStatus.js';
 
 /**
  * Contains logic for communicating with the heat pump via ModBus-protocol.
@@ -23,23 +25,66 @@ const signUnsignedValues = (value) => {
   return signed;
 };
 
+const parseCompressorUsage = async (compressorRunning, timeStamp) => {
+  // TODO VERIFY IT WORKS
+  let compressorUsage = null;
+  const latestEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
+  if (compressorRunning && latestEntry && !latestEntry.compressorRunning) {
+    // Current update is an end to the previous cycle and a start for a new one.
+    // Calculate the duration of the last cycle (running + not running).
+    const start = moment(
+      await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1),
+    );
+    const stop = moment(
+      await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1),
+    );
+    const cycleDuration = moment.duration(start.diff(timeStamp));
+    const runningDuration = moment.duration(start.diff(stop));
+    // Usage of the compressor during last cycle.
+    compressorUsage = runningDuration.asMinutes() / cycleDuration.asMinutes();
+    // Add start entry
+    const compressorStatusEntry = new CompressorStatus({
+      type: 'start',
+      time: timeStamp,
+    });
+    await compressorStatusEntry.save();
+  } else if (!compressorRunning && latestEntry && latestEntry.compressorRunning) {
+    // Current update is an end point.
+    // Add end entry
+    const compressorStatusEntry = new CompressorStatus({
+      type: 'end',
+      time: timeStamp,
+    });
+    await compressorStatusEntry.save();
+  }
+  return compressorUsage;
+};
+
 /**
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} - contains predetermined signed heat pump data
  */
-const parseModBusQuery = (data) => ({
-  time: new Date(),
-  outsideTemp: signUnsignedValues(data[0]),
-  hotGasTemp: signUnsignedValues(data[1]),
-  heatDistCircuitTemp1: signUnsignedValues(data[4]),
-  heatDistCircuitTemp2: signUnsignedValues(data[5]),
-  lowerTankTemp: signUnsignedValues(data[16]),
-  upperTankTemp: signUnsignedValues(data[17]),
-  insideTemp: signUnsignedValues(data[73]),
-  groundLoopTempOutput: signUnsignedValues(data[97]),
-  groundLoopTempInput: signUnsignedValues(data[98]),
-  heatDistCircuitTemp3: signUnsignedValues(data[116]),
-});
+const parseModBusQuery = async (data, compressorStatus) => {
+  const compressorRunning = compressorStatus === 1;
+  const timeStamp = new Date();
+  const compressorUsage = await parseCompressorUsage(compressorRunning, timeStamp);
+
+  return ({
+    time: timeStamp,
+    outsideTemp: signUnsignedValues(data[0]),
+    hotGasTemp: signUnsignedValues(data[1]),
+    heatDistCircuitTemp1: signUnsignedValues(data[4]),
+    heatDistCircuitTemp2: signUnsignedValues(data[5]),
+    lowerTankTemp: signUnsignedValues(data[16]),
+    upperTankTemp: signUnsignedValues(data[17]),
+    insideTemp: signUnsignedValues(data[73]),
+    groundLoopTempOutput: signUnsignedValues(data[97]),
+    groundLoopTempInput: signUnsignedValues(data[98]),
+    heatDistCircuitTemp3: signUnsignedValues(data[116]),
+    compressorRunning,
+    compressorUsage,
+  });
+};
 
 // Connect to the heat pump via ModBus-protocol
 const client = new ModBus();
@@ -52,7 +97,8 @@ client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
  */
 const queryHeatPumpValues = async () => {
   const values = await client.readHoldingRegisters(1, 120);
-  const parsedData = parseModBusQuery(values.data);
+  const compressorStatus = await client.readHoldingRegisters(5158, 1);
+  const parsedData = await parseModBusQuery(values.data, compressorStatus.data[0]);
   const heatPumpData = new HeatPump(parsedData);
   return heatPumpData.save();
 };
