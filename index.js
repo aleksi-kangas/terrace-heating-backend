@@ -1,14 +1,12 @@
 import cron from 'node-cron';
-import http from 'http';
-import socketIO from 'socket.io';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import config from './utils/config.js';
 import app from './app.js';
 import ModBusService from './utils/modBus.js';
 
-const server = http.createServer(app);
-const io = socketIO(server);
-
-io.origins('*:*');
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 
 io.on('connection', (socket) => {
   console.log(`New client connected ${socket.client.id}`);
@@ -28,4 +26,4 @@ cron.schedule('* * * * *', async () => {
   }
 }, {});
 
-server.listen(config.PORT);
+httpServer.listen(config.PORT);
