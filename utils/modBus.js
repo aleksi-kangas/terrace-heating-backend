@@ -26,20 +26,17 @@ const signUnsignedValues = (value) => {
 };
 
 const parseCompressorUsage = async (compressorRunning, timeStamp) => {
-  // TODO VERIFY IT WORKS
   let compressorUsage = null;
   const latestEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
   if (compressorRunning && latestEntry && !latestEntry.compressorRunning) {
     // Current update is an end to the previous cycle and a start for a new one.
     // Calculate the duration of the last cycle (running + not running).
-    const start = moment(
-      await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1),
-    );
-    const stop = moment(
-      await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1),
-    );
-    const cycleDuration = moment.duration(start.diff(timeStamp));
-    const runningDuration = moment.duration(start.diff(stop));
+    const startEntry = await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    const stopEntry = await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    const start = moment(startEntry[0].time);
+    const stop = moment(stopEntry[0].time);
+    const cycleDuration = moment.duration(timeStamp.diff(start));
+    const runningDuration = moment.duration(stop.diff(start));
     // Usage of the compressor during last cycle.
     compressorUsage = runningDuration.asMinutes() / cycleDuration.asMinutes();
     // Add start entry
@@ -67,7 +64,7 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
 const parseModBusQuery = async (data, compressorStatus) => {
   const compressorRunning = compressorStatus === 1;
   const timeStamp = new Date();
-  const compressorUsage = await parseCompressorUsage(compressorRunning, timeStamp);
+  const compressorUsage = await parseCompressorUsage(compressorRunning, moment(timeStamp));
 
   return ({
     time: timeStamp,

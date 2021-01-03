@@ -21,6 +21,7 @@ const heatPumpSchema = new mongoose.Schema({
   groundLoopTempOutput: { type: Number },
   activeHeatDistCircuits: { type: Number },
   compressorRunning: { type: Boolean },
+  compressorUsage: { type: Number },
 });
 
 /**
