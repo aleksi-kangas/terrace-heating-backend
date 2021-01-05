@@ -38,7 +38,7 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
     const cycleDuration = moment.duration(timeStamp.diff(start));
     const runningDuration = moment.duration(stop.diff(start));
     // Usage of the compressor during last cycle.
-    compressorUsage = runningDuration.asMinutes() / cycleDuration.asMinutes();
+    compressorUsage = Math.round((runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100) / 100;
     // Add start entry
     const compressorStatusEntry = new CompressorStatus({
       type: 'start',
