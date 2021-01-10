@@ -43,6 +43,8 @@ const getActiveCircuits = async () => ModBusService.queryNumberOfActiveCircuits(
  */
 const toggleCircuitThree = async () => ModBusService.toggleCircuitThree();
 
+const getSchedule = async (variable) => ModBusService.querySchedule(variable);
+
 export default {
-  getData, getActiveCircuits, toggleCircuitThree,
+  getData, getActiveCircuits, getSchedule, toggleCircuitThree,
 };

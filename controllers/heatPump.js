@@ -67,4 +67,23 @@ heatPumpRouter.post('/circuits', async (req, res, next) => {
   return res.status(401);
 });
 
+heatPumpRouter.get('/schedules/:variable', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const { variable } = req.params;
+      if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
+        return res.json({
+          error: 'Unknown variable',
+        }).status(400).end();
+      }
+      const data = await HeatPumpService.getSchedule(variable);
+      return res.json(data);
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
+});
+
 export default heatPumpRouter;

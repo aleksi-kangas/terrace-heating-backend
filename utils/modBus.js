@@ -61,7 +61,7 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} - contains predetermined signed heat pump data
  */
-const parseModBusQuery = async (data, compressorStatus) => {
+const parseHeatPumpData = async (data, compressorStatus) => {
   const compressorRunning = compressorStatus === 1;
   const timeStamp = new Date();
   const compressorUsage = await parseCompressorUsage(compressorRunning, moment(timeStamp));
@@ -83,6 +83,82 @@ const parseModBusQuery = async (data, compressorStatus) => {
   });
 };
 
+const parseLowerTankSchedule = (times, deltas) => ({
+  monday: {
+    start: times[0],
+    end: times[7],
+    delta: deltas[0],
+  },
+  tuesday: {
+    start: times[1],
+    end: times[8],
+    delta: deltas[1],
+  },
+  wednesday: {
+    start: times[2],
+    end: times[9],
+    delta: deltas[2],
+  },
+  thursday: {
+    start: times[3],
+    end: times[10],
+    delta: deltas[3],
+  },
+  friday: {
+    start: times[4],
+    end: times[11],
+    delta: deltas[5],
+  },
+  saturday: {
+    start: times[5],
+    end: times[12],
+    delta: deltas[6],
+  },
+  sunday: {
+    start: times[6],
+    end: times[13],
+    delta: deltas[7],
+  },
+});
+
+const parseCircuitThreeSchedule = (times, deltas) => ({
+  monday: {
+    start: times[3],
+    end: times[2],
+    delta: deltas[1],
+  },
+  tuesday: {
+    start: times[0],
+    end: times[1],
+    delta: deltas[0],
+  },
+  wednesday: {
+    start: times[9],
+    end: times[10],
+    delta: deltas[4],
+  },
+  thursday: {
+    start: times[11],
+    end: times[4],
+    delta: deltas[5],
+  },
+  friday: {
+    start: times[12],
+    end: times[13],
+    delta: deltas[6],
+  },
+  saturday: {
+    start: times[5],
+    end: times[6],
+    delta: deltas[2],
+  },
+  sunday: {
+    start: times[7],
+    end: times[8],
+    delta: deltas[3],
+  },
+});
+
 // Connect to the heat pump via ModBus-protocol
 const client = new ModBus();
 client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
@@ -95,7 +171,7 @@ client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
 const queryHeatPumpValues = async () => {
   const values = await client.readHoldingRegisters(1, 120);
   const compressorStatus = await client.readHoldingRegisters(5158, 1);
-  const parsedData = await parseModBusQuery(values.data, compressorStatus.data[0]);
+  const parsedData = await parseHeatPumpData(values.data, compressorStatus.data[0]);
   const heatPumpData = new HeatPump(parsedData);
   return heatPumpData.save();
 };
@@ -110,6 +186,20 @@ const queryNumberOfActiveCircuits = async () => {
   return activeCircuits.data[0];
 };
 
+const querySchedule = async (variable) => {
+  if (variable === 'lowerTank') {
+    const scheduleTimes = await client.readHoldingRegisters(5014, 14);
+    const scheduleDeltas = await client.readHoldingRegisters(36, 8);
+    return parseLowerTankSchedule(scheduleTimes.data, scheduleDeltas.data);
+  }
+  if (variable === 'heatDistCircuit3') {
+    const scheduleTimes = await client.readHoldingRegisters(5211, 14);
+    const scheduleDeltas = await client.readHoldingRegisters(106, 7);
+    return parseCircuitThreeSchedule(scheduleTimes.data, scheduleDeltas.data);
+  }
+  return null;
+};
+
 /**
  * Activates/de-activates the third heat distribution circuit of the heat pump.
  * Activation/de-activation is determined by the current state of the heat distribution circuits.
@@ -122,5 +212,5 @@ const toggleCircuitThree = async () => {
 };
 
 export default {
-  queryHeatPumpValues, queryNumberOfActiveCircuits, toggleCircuitThree,
+  queryHeatPumpValues, queryNumberOfActiveCircuits, querySchedule, toggleCircuitThree,
 };
