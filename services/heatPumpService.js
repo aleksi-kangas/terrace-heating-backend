@@ -35,16 +35,14 @@ const getData = async (date) => {
  * Retrieves the amount of active heat distribution circuits from the heat pump.
  * @return {Number} - the amount of active heat distribution circuits (usually 2 or 3)
  */
-const getActiveCircuits = async () => ModBusService.queryNumberOfActiveCircuits();
+const getActiveCircuits = async () => ModBusService.queryActiveCircuits();
 
-/**
- * Toggles the amount of active heat distribution circuits from 2 to 3 and vice versa.
- * Toggling is based on the current state of the heat pump.
- */
-const toggleCircuitThree = async () => ModBusService.toggleCircuitThree();
+const startCircuitThree = async () => ModBusService.startCircuitThree();
+
+const stopCircuitThree = async () => ModBusService.stopCircuitThree();
 
 const getSchedule = async (variable) => ModBusService.querySchedule(variable);
 
 export default {
-  getData, getActiveCircuits, getSchedule, toggleCircuitThree,
+  getData, getActiveCircuits, getSchedule, startCircuitThree, stopCircuitThree,
 };

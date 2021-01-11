@@ -181,7 +181,7 @@ const queryHeatPumpValues = async () => {
  * Reasonable return values are 2 and 3.
  * @return {Object} - number of active heat distribution circuits (usually 2 or 3)
  */
-const queryNumberOfActiveCircuits = async () => {
+const queryActiveCircuits = async () => {
   const activeCircuits = await client.readHoldingRegisters(5100, 1);
   return activeCircuits.data[0];
 };
@@ -200,17 +200,14 @@ const querySchedule = async (variable) => {
   return null;
 };
 
-/**
- * Activates/de-activates the third heat distribution circuit of the heat pump.
- * Activation/de-activation is determined by the current state of the heat distribution circuits.
- * Either from 2 -> 3 or 3 -> 2.
- */
-const toggleCircuitThree = async () => {
-  const activeCircuits = await queryNumberOfActiveCircuits();
-  const value = activeCircuits === 3 ? 2 : 3;
-  await client.writeRegister(5100, value);
+const startCircuitThree = async () => {
+  await client.writeRegister(5100, 3);
+};
+
+const stopCircuitThree = async () => {
+  await client.writeRegister(5100, 2);
 };
 
 export default {
-  queryHeatPumpValues, queryNumberOfActiveCircuits, querySchedule, toggleCircuitThree,
+  queryHeatPumpValues, queryActiveCircuits, querySchedule, startCircuitThree, stopCircuitThree,
 };

@@ -50,15 +50,30 @@ heatPumpRouter.get('/circuits', async (req, res, next) => {
   return res.status(401);
 });
 
-heatPumpRouter.post('/circuits', async (req, res, next) => {
+heatPumpRouter.post('/start', async (req, res, next) => {
   try {
     const user = await authorize(req);
     if (user) {
-      const activeCircuits = req.body.circuits;
-      if (activeCircuits !== 2 && activeCircuits !== 3) {
-        return res.status(400).end();
+      const { softStart } = req.body;
+
+      await HeatPumpService.startCircuitThree();
+      if (softStart) {
+        // TODO
+        console.log('softStart');
       }
-      await HeatPumpService.toggleCircuitThree();
+      return res.status(200).end();
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
+});
+
+heatPumpRouter.post('/stop', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      await HeatPumpService.stopCircuitThree();
       return res.status(200).end();
     }
   } catch (exception) {
