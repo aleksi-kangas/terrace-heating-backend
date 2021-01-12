@@ -1,16 +1,18 @@
 # Terrace Heating Backend
 > An Express.js backend which enables monitoring and controlling of a terrace heating system.
 
-There is a *Lämpöässä* (TODO MODEL) ground source heat pump at my parents' place which enables heating for an enclosed terrace.
+A personal project for gaining a deeper understanding of Full Stack development
+by building a meaningful application for real world use.
 
-TODO BACKGROUND
+In a nutshell, this project enables monitoring and controlling the heating system for an enclosed terrace at my parents' home.
 
-TODO MOTIVATION
+#### Background Motivation
+At my parents' home, there is an enclosed terrace for which the heating (ground & air) is provided by a *Lämpöässä* ground source heat-pump.
+
+As I found that monitoring and controlling the heat-pump was a bit cumbersome through the provided cloud platform,
+I visioned about a simple and responsive web application which would provide my family members an easy way of using the terrace heating system.
 
 This repository contains the implementation of the backend portion of the application.
-
-
-
 
 ### Table of Contents
 [Features](#features)  
@@ -35,7 +37,7 @@ client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT }).then();
 ```
 
 - Querying values only each minute to avoid stressing the internal controller of the heat-pump unnecessarily.
-    - After each query of the heat-pump, the latest values are transmitted to clients via WebSocket.
+    - After each query of the heat-pump, the latest values are transmitted to clients with [Socket.io](https://github.com/socketio/socket.io).
     - A WebSocket connection is used to reduce unnecessary HTTP polling by the frontend.
 
 ```JavaScript
@@ -95,5 +97,3 @@ const startCircuitThree = async () => {
   await client.writeRegister(5100, 3);
 };
 ```
-
-## 
