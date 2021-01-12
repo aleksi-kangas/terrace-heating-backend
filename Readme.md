@@ -26,10 +26,19 @@ The features of the Express.js backend include:
 - Providing the possibility to control selected heat-pump features related to terrace heating via ModBus protocol.
 
 ## Implementation
-- Querying values each minute to avoid stressing the internal controller of the heat-pump unnecessarily.
+- Communication with the heat-pump is established with ModBus TCP protocol using [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) library.
+
+```JavaScript
+// Connect to the heat pump via ModBus-protocol
+const client = new ModBus();
+client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT }).then();
+```
+
+- Querying values only each minute to avoid stressing the internal controller of the heat-pump unnecessarily.
     - After each query of the heat-pump, the latest values are transmitted to clients via WebSocket.
     - A WebSocket connection is used to reduce unnecessary HTTP polling by the frontend.
-```
+
+```JavaScript
 /**
  * A cron-job for querying the data from the heat pump each minute.
  */
@@ -44,9 +53,10 @@ cron.schedule('* * * * *', async () => {
 }, {});
 ```
 
-- Simplified REST API requires user authentication and provides endpoints for fetching data and controlling the heat-pump.
+- A Simplified REST API requires user authentication and provides endpoints for fetching data and controlling the heat-pump.
     - Example:
-```
+
+```JavaScript
 /**
  * Endpoint for fetching heat pump data.
  *
@@ -75,5 +85,15 @@ heatPumpRouter.get('/', async (req, res, next) => {
 });
 ```
 
+- Controlling of selected terrace heating related features is implemented by writing to specific registers in the heat-pump using ModBus.
+  - The most important feature to have access to is Heat Distribution Circuit 3,
+    which controls the critical part of the terrace floor heating.
+  - Example:
+
+```JavaScript
+const startCircuitThree = async () => {
+  await client.writeRegister(5100, 3);
+};
+```
 
 ## 
