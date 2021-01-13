@@ -8,7 +8,10 @@
     "airbnb"
   ],
   "parserOptions": {
-    "ecmaVersion": 11,
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 12,
     "sourceType": "module"
   },
   "rules": {

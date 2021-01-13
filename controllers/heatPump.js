@@ -16,7 +16,7 @@ const heatPumpRouter = new express.Router();
  * Optional query strings year, month and day determine a date,
  * that is used for filtering and including heat pump data entries from that date onwards.
  *
- * @return {Array<Object>} - contains heat pump data from the given date onwards
+ * @return {Array.<Object>} - contains heat pump data from the given date onwards
  */
 heatPumpRouter.get('/', async (req, res, next) => {
   try {
@@ -37,11 +37,11 @@ heatPumpRouter.get('/', async (req, res, next) => {
   return res.status(401);
 });
 
-heatPumpRouter.get('/circuits', async (req, res, next) => {
+heatPumpRouter.get('/status', async (req, res, next) => {
   try {
     const user = await authorize(req);
     if (user) {
-      const data = await HeatPumpService.getActiveCircuits();
+      const data = await HeatPumpService.getStatus();
       return res.json(data);
     }
   } catch (exception) {
@@ -55,13 +55,16 @@ heatPumpRouter.post('/start', async (req, res, next) => {
     const user = await authorize(req);
     if (user) {
       const { softStart } = req.body;
+      let newStatus;
 
-      await HeatPumpService.startCircuitThree();
       if (softStart) {
-        // TODO
-        console.log('softStart');
+        await HeatPumpService.softStartCircuitThree();
+        newStatus = await HeatPumpService.getStatus();
+      } else {
+        await HeatPumpService.startCircuitThree();
+        newStatus = await HeatPumpService.getStatus();
       }
-      return res.status(200).end();
+      return res.status(200).json(newStatus);
     }
   } catch (exception) {
     next(exception);
@@ -74,7 +77,8 @@ heatPumpRouter.post('/stop', async (req, res, next) => {
     const user = await authorize(req);
     if (user) {
       await HeatPumpService.stopCircuitThree();
-      return res.status(200).end();
+      const newStatus = await HeatPumpService.getStatus();
+      return res.status(200).json(newStatus);
     }
   } catch (exception) {
     next(exception);
