@@ -7,7 +7,7 @@ by building a meaningful application for real world use.
 In a nutshell, this project enables monitoring and controlling the heating system for an enclosed terrace at my parents' home.
 
 #### Background Motivation
-At my parents' home, there is an enclosed terrace for which the heating (ground & air) is provided by a *Lämpöässä* ground source heat-pump.
+At my parents' home, there is an enclosed terrace for which the heating (ground & air) is provided by a *Lämpöässä Vmi 9* ground source heat-pump.
 
 As I found that monitoring and controlling the heat-pump was a bit cumbersome through the provided cloud platform,
 I visioned about a simple and responsive web application which would provide my family members an easy way of using the terrace heating system.
@@ -20,7 +20,7 @@ This repository contains the implementation of the backend portion of the applic
 
 ## Features
 The features of the Express.js backend include:
-- Periodical querying of *Lämpöässä* (TODO MODEL) heat-pump values via ModBus TCP connection.
+- Periodical querying of *Lämpöässä* (Vmi 9) heat-pump values via ModBus TCP connection.
 - Data is securely stored in MongoDB Cloud.
 - Offering semi real-time data for clients via Socket.io.
 - Simplified REST API providing a frontend means for displaying the heat-pump data.
@@ -88,8 +88,7 @@ heatPumpRouter.get('/', async (req, res, next) => {
 ```
 
 - Controlling of selected terrace heating related features is implemented by writing to specific registers in the heat-pump using ModBus.
-  - The most important feature to have access to is Heat Distribution Circuit 3,
-    which controls the critical part of the terrace floor heating.
+  - The most important register is the one which controls the amount of active heat distribution circuits.
   - Example:
 
 ```JavaScript
