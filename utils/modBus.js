@@ -25,6 +25,13 @@ const signUnsignedValues = (value) => {
   return signed;
 };
 
+/**
+ * Parses current compressor usage and determines,
+ * whether the current update is either a start point or end point for a compressor cycle.
+ * @param compressorRunning Boolean
+ * @param timeStamp time of the query of the values
+ * @return {Promise<null>}
+ */
 const parseCompressorUsage = async (compressorRunning, timeStamp) => {
   let compressorUsage = null;
   const latestEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
@@ -186,6 +193,12 @@ const queryActiveCircuits = async () => {
   return activeCircuits.data[0];
 };
 
+/**
+ * Queries the boosting schedule of either 'lowerTank' or 'heatDistCircuit3' from the heat-pump.
+ * Returns an object containing start hour, end hour and temperature delta for each weekday.
+ * @param variable String either 'lowerTank' or 'heatDistCircuit3'
+ * @return Object { monday: { start: Number, end: Number, delta: Number }, ... }
+ */
 const querySchedule = async (variable) => {
   if (variable === 'lowerTank') {
     const scheduleTimes = await client.readHoldingRegisters(5014, 14);
@@ -200,10 +213,16 @@ const querySchedule = async (variable) => {
   return null;
 };
 
+/**
+ * Sets the number of active heat distribution circuits to three, i.e. enables circuit three.
+ */
 const startCircuitThree = async () => {
   await client.writeRegister(5100, 3);
 };
 
+/**
+ * Sets the number of active heat distribution circuits to two, i.e. disables circuit three.
+ */
 const stopCircuitThree = async () => {
   await client.writeRegister(5100, 2);
 };

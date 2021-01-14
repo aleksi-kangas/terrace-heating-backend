@@ -3,6 +3,12 @@ import loginService from '../services/loginService.js';
 
 const loginRouter = new express.Router();
 
+/**
+ * Endpoint for user login.
+ * Verifies the given credentials and returns a user object with JsonWebToken,
+ * if the credentials were valid.
+ * @return {Object} { token: String, username: String, name: String, id: String }
+ */
 loginRouter.post('/', async (request, response) => {
   const credentials = {
     username: request.body.username,
