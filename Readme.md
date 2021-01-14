@@ -17,6 +17,7 @@ This repository contains the implementation of the backend portion of the applic
 ### Table of Contents
 [Features](#features)  
 [Implementation](#implementation)  
+[Requirements](#requirements)
 
 ## Features
 The features of the Express.js backend include:
@@ -96,3 +97,13 @@ const startCircuitThree = async () => {
   await client.writeRegister(5100, 3);
 };
 ```
+
+## Requirements
+- Requires the following environment variables:
+  ```
+  MONGODB_URI=  <URI for MongoDB>
+  PORT=3003
+  MODBUS_HOST=  <IP for ModBus connection>
+  MODBUS_PORT=  <Port for ModBus connection>
+  JWT=  <JsonWebToken key>
+  ```
