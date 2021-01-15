@@ -38,18 +38,28 @@ const getSchedule = async (variable) => ModBusService.querySchedule(variable);
 
 const setSchedule = async (variableSchedule) => ModBusService.setSchedule(variableSchedule);
 
+const getScheduling = async () => {
+  const scheduling = await ModBusService.getSchedulingStatus();
+  const lowerTank = await ModBusService.querySchedule('lowerTank');
+  const heatDistCircuit3 = await ModBusService.querySchedule('heatDistCircuit3');
+  return { scheduling, lowerTank, heatDistCircuit3 };
+};
+
 /**
  * Retrieves the amount of active heat distribution circuits from the heat pump.
  * @return {Number} - the amount of active heat distribution circuits (usually 2 or 3)
  */
 const getStatus = async () => {
   const circuits = await ModBusService.queryActiveCircuits();
-  const circuitThreeSchedule = await getSchedule('heatDistCircuit3');
+  const schedulingActive = await getScheduling();
   if (circuits === 3) {
     if (softStart) {
       return { status: 'softStart' };
     }
-
+    if (!schedulingActive) {
+      return { status: 'running' };
+    }
+    const circuitThreeSchedule = await getSchedule('heatDistCircuit3');
     const now = new Date();
     const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const weekDay = weekDays[now.getDay()];
@@ -63,35 +73,39 @@ const getStatus = async () => {
   return { status: 'stopped' };
 };
 
-const startCircuitThree = async () => ModBusService.startCircuitThree();
+const startCircuitThree = async () => {
+  await ModBusService.startCircuitThree();
+  await ModBusService.enableScheduling();
+};
 
 const softStartCircuitThree = async () => {
   softStart = true;
   const timeStamp = new Date();
   timeStamp.setHours(timeStamp.getHours() + 12);
-  schedule.scheduleJob(timeStamp, () => {
+  await ModBusService.startCircuitThree();
+  schedule.scheduleJob(timeStamp, async () => {
     softStart = false;
-    // TODO Set schedules active
+    await ModBusService.enableScheduling();
   });
 };
 
-const stopCircuitThree = async () => ModBusService.stopCircuitThree();
-
-const getScheduling = async () => {
-  const scheduling = await ModBusService.getSchedulingStatus();
-  const lowerTank = await ModBusService.querySchedule('lowerTank');
-  const heatDistCircuit3 = await ModBusService.querySchedule('heatDistCircuit3');
-  return { scheduling, lowerTank, heatDistCircuit3 };
+const stopCircuitThree = async () => {
+  await ModBusService.stopCircuitThree();
+  await ModBusService.disableScheduling();
+  softStart = false;
 };
 
 const setScheduling = async (schedulingEnable) => {
   if (schedulingEnable) {
     // Turning on scheduling
-    return ModBusService.enableScheduling();
+    softStart = false;
+    await ModBusService.enableScheduling();
+    return getStatus();
   }
   if (!schedulingEnable) {
     // Turning off scheduling
-    return ModBusService.disableScheduling();
+    await ModBusService.disableScheduling();
+    return getStatus();
   }
   return null;
 };

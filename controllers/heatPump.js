@@ -169,8 +169,8 @@ heatPumpRouter.post('/scheduling', async (req, res, next) => {
     const user = await authorize(req);
     if (user) {
       const { scheduling } = req.body;
-      await HeatPumpService.setScheduling(scheduling);
-      return res.status(200).end();
+      const newStatus = await HeatPumpService.setScheduling(scheduling);
+      return res.status(200).json(newStatus);
     }
   } catch (exception) {
     next(exception);
