@@ -3,6 +3,7 @@ import moment from 'moment';
 import config from './config.js';
 import HeatPump from '../models/heatPump.js';
 import CompressorStatus from '../models/compressorStatus.js';
+import registers from './registers.js';
 
 /**
  * Contains logic for communicating with the heat pump via ModBus-protocol.
@@ -45,6 +46,7 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
     const cycleDuration = moment.duration(timeStamp.diff(start));
     const runningDuration = moment.duration(stop.diff(start));
     // Usage of the compressor during last cycle.
+    // eslint-disable-next-line max-len
     compressorUsage = Math.round((runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100) / 100;
     // Add start entry
     const compressorStatusEntry = new CompressorStatus({
@@ -177,7 +179,7 @@ client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
  */
 const queryHeatPumpValues = async () => {
   const values = await client.readHoldingRegisters(1, 120);
-  const compressorStatus = await client.readHoldingRegisters(5158, 1);
+  const compressorStatus = await client.readHoldingRegisters(registers.compressorStatus, 1);
   const parsedData = await parseHeatPumpData(values.data, compressorStatus.data[0]);
   const heatPumpData = new HeatPump(parsedData);
   return heatPumpData.save();
@@ -213,6 +215,35 @@ const querySchedule = async (variable) => {
   return null;
 };
 
+const setSchedule = async (variableSchedule) => {
+  const { variable, schedule } = variableSchedule;
+  if (variable === 'lowerTank') {
+    const lowerTankRegisters = registers.lowerTank;
+    const weekDays = Object.keys(schedule);
+    weekDays.forEach((weekDay) => {
+      const startRegister = lowerTankRegisters[weekDay].start;
+      const endRegister = lowerTankRegisters[weekDay].end;
+      const deltaRegister = lowerTankRegisters[weekDay].delta;
+      client.writeRegister(startRegister, schedule[weekDay].start).then();
+      client.writeRegister(endRegister, schedule[weekDay].end).then();
+      client.writeRegister(deltaRegister, schedule[weekDay].delta).then();
+    });
+  }
+  if (variable === 'heatDistCircuit3') {
+    const heatDistCircuit3Registers = registers.heatDistCircuit3;
+    const weekDays = Object.keys(schedule);
+    weekDays.forEach((weekDay) => {
+      const startRegister = heatDistCircuit3Registers[weekDay].start;
+      const endRegister = heatDistCircuit3Registers[weekDay].end;
+      const deltaRegister = heatDistCircuit3Registers[weekDay].delta;
+      client.writeRegister(startRegister, schedule[weekDay].start).then();
+      client.writeRegister(endRegister, schedule[weekDay].end).then();
+      client.writeRegister(deltaRegister, schedule[weekDay].delta).then();
+    });
+  }
+  return null;
+};
+
 /**
  * Sets the number of active heat distribution circuits to three, i.e. enables circuit three.
  */
@@ -227,6 +258,25 @@ const stopCircuitThree = async () => {
   await client.writeRegister(5100, 2);
 };
 
+const enableScheduling = async () => client.writeCoil(registers.schedulingActive, true);
+
+const disableScheduling = async () => {
+  await client.writeCoil(registers.schedulingActive, false);
+};
+
+const getSchedulingStatus = async () => {
+  const status = await client.readCoils(134, 1);
+  return status.data[0];
+};
+
 export default {
-  queryHeatPumpValues, queryActiveCircuits, querySchedule, startCircuitThree, stopCircuitThree,
+  queryHeatPumpValues,
+  queryActiveCircuits,
+  querySchedule,
+  setSchedule,
+  enableScheduling,
+  disableScheduling,
+  getSchedulingStatus,
+  startCircuitThree,
+  stopCircuitThree,
 };

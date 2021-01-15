@@ -131,4 +131,51 @@ heatPumpRouter.get('/schedules/:variable', async (req, res, next) => {
   return res.status(401);
 });
 
+heatPumpRouter.post('/schedules/:variable', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const { variable } = req.params;
+      if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
+        return res.status(400).json({
+          error: 'Unknown variable',
+        }).end();
+      }
+      const { schedule } = req.body;
+      await HeatPumpService.setSchedule({ variable, schedule });
+      return res.status(200).end();
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
+});
+
+heatPumpRouter.get('/scheduling', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const data = await HeatPumpService.getScheduling();
+      return res.json(data);
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
+});
+
+heatPumpRouter.post('/scheduling', async (req, res, next) => {
+  try {
+    const user = await authorize(req);
+    if (user) {
+      const { scheduling } = req.body;
+      await HeatPumpService.setScheduling(scheduling);
+      return res.status(200).end();
+    }
+  } catch (exception) {
+    next(exception);
+  }
+  return res.status(401);
+});
+
 export default heatPumpRouter;

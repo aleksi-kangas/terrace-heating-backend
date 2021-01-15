@@ -36,6 +36,8 @@ const getData = async (date) => {
 
 const getSchedule = async (variable) => ModBusService.querySchedule(variable);
 
+const setSchedule = async (variableSchedule) => ModBusService.setSchedule(variableSchedule);
+
 /**
  * Retrieves the amount of active heat distribution circuits from the heat pump.
  * @return {Number} - the amount of active heat distribution circuits (usually 2 or 3)
@@ -64,9 +66,10 @@ const getStatus = async () => {
 const startCircuitThree = async () => ModBusService.startCircuitThree();
 
 const softStartCircuitThree = async () => {
-  const now = moment();
-  const executeMoment = now.add(12, 'hours');
-  schedule.scheduleJob(executeMoment, () => {
+  softStart = true;
+  const timeStamp = new Date();
+  timeStamp.setHours(timeStamp.getHours() + 12);
+  schedule.scheduleJob(timeStamp, () => {
     softStart = false;
     // TODO Set schedules active
   });
@@ -74,6 +77,33 @@ const softStartCircuitThree = async () => {
 
 const stopCircuitThree = async () => ModBusService.stopCircuitThree();
 
+const getScheduling = async () => {
+  const scheduling = await ModBusService.getSchedulingStatus();
+  const lowerTank = await ModBusService.querySchedule('lowerTank');
+  const heatDistCircuit3 = await ModBusService.querySchedule('heatDistCircuit3');
+  return { scheduling, lowerTank, heatDistCircuit3 };
+};
+
+const setScheduling = async (schedulingEnable) => {
+  if (schedulingEnable) {
+    // Turning on scheduling
+    return ModBusService.enableScheduling();
+  }
+  if (!schedulingEnable) {
+    // Turning off scheduling
+    return ModBusService.disableScheduling();
+  }
+  return null;
+};
+
 export default {
-  getData, getStatus, getSchedule, startCircuitThree, softStartCircuitThree, stopCircuitThree,
+  getData,
+  getStatus,
+  getSchedule,
+  setSchedule,
+  startCircuitThree,
+  getScheduling,
+  setScheduling,
+  softStartCircuitThree,
+  stopCircuitThree,
 };
