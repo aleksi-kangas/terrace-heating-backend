@@ -90,8 +90,8 @@ const softStartCircuitThree = async () => {
 };
 
 const stopCircuitThree = async () => {
-  await ModBusService.stopCircuitThree();
   await ModBusService.disableScheduling();
+  await ModBusService.stopCircuitThree();
   softStart = false;
 };
 
