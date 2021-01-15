@@ -27,6 +27,7 @@ app.use(express.json());
 app.use(middleware.authTokenExtractor);
 
 // Routes
+app.use(express.static('build'));
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/login', loginRouter);
 
