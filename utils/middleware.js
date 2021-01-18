@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/user.js';
 
 /**
  * Middleware for handling errors.
@@ -22,16 +23,15 @@ export const authorizeToken = async (request, response, next) => {
   if (!token) {
     return response.status(401).end();
   }
-  return jwt.verify(token, process.env.JWT, (error, decodedToken) => {
+  return jwt.verify(token, process.env.JWT, async (error, decodedToken) => {
     if (error) {
       return response.status(401).end();
     }
-    request.user = {
-      id: decodedToken.id,
-      username: decodedToken.username,
-      name: decodedToken.name,
-    };
-    return next();
+    const user = await User.findById(decodedToken.id);
+    if (user) {
+      return next();
+    }
+    return response.status(401).end();
   });
 };
 
