@@ -1,5 +1,7 @@
 import express from 'express';
-import loginService from '../services/loginService.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.js';
 
 const loginRouter = new express.Router();
 
@@ -15,20 +17,33 @@ loginRouter.post('/', async (request, response) => {
     password: request.body.password,
   };
 
-  // Attempt to login
-  const result = await loginService.login(credentials);
+  const user = await User.findOne({ username: credentials.username });
+  if (!user) {
+    return response.status(401).json({ error: 'invalid username or password' });
+  }
+  // Compare password
+  const correctPassword = bcrypt.compareSync(credentials.password, user.passwordHash);
 
   // Password is wrong
-  if (!result) {
+  if (!correctPassword) {
     return response.status(401).json({ error: 'invalid username or password' });
   }
 
-  return response.status(200).send({
-    token: result.token,
-    username: result.username,
-    name: result.name,
-    id: result.id,
-  });
+  // Password is correct -> Generate JWT
+  const token = jwt.sign({
+    id: user.id,
+    username: user.username,
+    name: user.name,
+  }, process.env.JWT);
+
+  return response
+    .cookie('token', token, { httpOnly: true })
+    .status(200)
+    .send({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+    });
 });
 
 export default loginRouter;
