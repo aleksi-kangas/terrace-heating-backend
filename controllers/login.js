@@ -34,7 +34,9 @@ loginRouter.post('/', async (request, response) => {
     id: user.id,
     username: user.username,
     name: user.name,
-  }, process.env.JWT);
+  }, process.env.JWT, {
+    expiresIn: 86400,
+  });
 
   return response
     .cookie('token', token, { httpOnly: true })
