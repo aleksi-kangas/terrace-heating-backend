@@ -2,12 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import 'express-async-errors';
-import { errorHandler, unknownEndpoint } from './utils/middleware.js';
+import { errorHandler, unknownEndpoint } from './utils/middleware';
 
 // Routers
-import heatPumpRouter from './controllers/heatPump.js';
-import loginRouter from './controllers/login.js';
-import logoutRouter from './controllers/logout.js';
+import heatPumpRouter from './controllers/heatPump';
+import loginRouter from './controllers/login';
+import logoutRouter from './controllers/logout';
 // import userRouter from './controllers/users.js';
 
 const app = express();

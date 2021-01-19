@@ -1,6 +1,6 @@
 import express from 'express';
-import HeatPumpService from '../services/heatPumpService.js';
-import { authorizeToken } from '../utils/middleware.js';
+import HeatPumpService from '../services/heatPumpService';
+import { authorizeToken } from '../utils/middleware';
 
 const heatPumpRouter = new express.Router();
 

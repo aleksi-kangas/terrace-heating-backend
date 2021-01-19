@@ -3,10 +3,10 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
-import User from './models/user.js';
-import config from './utils/config.js';
-import app from './app.js';
-import ModBusService from './utils/modBus.js';
+import User from './models/user';
+import config from './utils/config';
+import app from './app';
+import ModBusService from './utils/modBus';
 
 const httpServer = createServer(app);
 

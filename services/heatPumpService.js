@@ -1,7 +1,7 @@
 import moment from 'moment';
 import schedule from 'node-schedule';
-import HeatPump from '../models/heatPump.js';
-import ModBusService from '../utils/modBus.js';
+import HeatPump from '../models/heatPump';
+import ModBusService from '../utils/modBus';
 
 let softStart = false;
 
