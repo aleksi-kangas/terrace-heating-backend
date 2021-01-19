@@ -1,27 +1,53 @@
 import cron from 'node-cron';
-import { v4 as uuidv4 } from 'uuid';
-import WebSocket from 'ws';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import { createServer } from 'http';
+import mongoose from 'mongoose';
+import User from './models/user.js';
 import config from './utils/config.js';
 import app from './app.js';
 import ModBusService from './utils/modBus.js';
 
 const httpServer = createServer(app);
 
-const webSocketServer = new WebSocket.Server({ server: httpServer });
+// Connect to MongoDB database
+mongoose
+  .connect(config.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .catch((e) => {
+    console.error(e.message);
+  });
+
+const io = new Server(httpServer);
 
 let clients = [];
 
-webSocketServer.on('connection', (webSocket) => {
-  // eslint-disable-next-line no-param-reassign
-  webSocket.id = uuidv4();
-  console.log(`New client ${webSocket.id} connected`);
-  clients.push(webSocket);
-
-  // TODO Fix client disconnecting
-  webSocket.on('disconnect', () => {
-    console.log(`Client ${webSocket.id} disconnected`);
-    clients = clients.filter((client) => client.id !== webSocket.id);
+io.on('connection', (socket) => {
+  const cookieToken = socket.request.headers.cookie;
+  if (cookieToken) {
+    const token = cookieToken.substr(6);
+    jwt.verify(token, process.env.JWT, async (error, decodedToken) => {
+      if (error) {
+        return new Error('Authentication error');
+      }
+      const user = await User.findById(decodedToken.id);
+      if (!user) {
+        return new Error('Authentication error');
+      }
+      console.log(`New client connected ${socket.client.id}`);
+      socket.emit('auth', {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+      });
+      return clients.push(socket);
+    });
+  }
+  socket.on('disconnect', () => {
+    clients = clients.filter((client) => client.client.id !== socket.client.id);
+    console.log(`Client disconnected ${socket.client.id}`);
   });
 });
 
@@ -32,7 +58,7 @@ webSocketServer.on('connection', (webSocket) => {
 cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusService.queryHeatPumpValues();
-    clients.forEach((client) => client.send(JSON.stringify(queriedData)));
+    clients.forEach((client) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
