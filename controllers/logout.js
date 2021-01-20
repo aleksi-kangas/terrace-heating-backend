@@ -7,9 +7,10 @@ const logoutRouter = new express.Router();
  * Removes the http-only cookie from response.
  * @return {Object} { token: String, username: String, name: String, id: String }
  */
-logoutRouter.post('/', async (request, response) => response
-  .clearCookie('token')
-  .status(200)
-  .end());
+logoutRouter.post('/', (request, response) => {
+  request.session.destroy(() => {
+    response.redirect('/');
+  });
+});
 
 export default logoutRouter;

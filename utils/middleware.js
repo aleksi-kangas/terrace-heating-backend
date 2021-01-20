@@ -1,6 +1,3 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/user';
-
 /**
  * Middleware for handling errors.
  */
@@ -18,21 +15,14 @@ export const errorHandler = (error, request, response, next) => {
   return next(error);
 };
 
-export const authorizeToken = async (request, response, next) => {
-  const token = request.cookies.token || null;
-  if (!token) {
+/**
+ * Middleware for authorizing API requests.
+ */
+export const authorize = (request, response, next) => {
+  if (!request.session.loggedIn) {
     return response.status(401).end();
   }
-  return jwt.verify(token, process.env.JWT, async (error, decodedToken) => {
-    if (error) {
-      return response.status(401).end();
-    }
-    const user = await User.findById(decodedToken.id);
-    if (user) {
-      return next();
-    }
-    return response.status(401).end();
-  });
+  return next();
 };
 
 /**

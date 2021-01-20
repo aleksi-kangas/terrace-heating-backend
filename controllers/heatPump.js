@@ -1,6 +1,6 @@
 import express from 'express';
 import HeatPumpService from '../services/heatPumpService';
-import { authorizeToken } from '../utils/middleware';
+import { authorize } from '../utils/middleware';
 
 const heatPumpRouter = new express.Router();
 
@@ -12,7 +12,7 @@ const heatPumpRouter = new express.Router();
  *
  * @return {Array.<Object>} - contains heat pump data from the given date onwards
  */
-heatPumpRouter.get('/', authorizeToken, async (req, res) => {
+heatPumpRouter.get('/', authorize, async (req, res) => {
   // Optional query strings
   const date = {
     year: req.query.year,
@@ -28,7 +28,7 @@ heatPumpRouter.get('/', authorizeToken, async (req, res) => {
  * Status is one of 'running', 'stopped', 'softStart' or 'boosting'.
  * @return {Object} status: 'running' || 'stopped' || 'softStart' || 'boosting'
  */
-heatPumpRouter.get('/status', authorizeToken, async (req, res) => {
+heatPumpRouter.get('/status', authorize, async (req, res) => {
   const data = await HeatPumpService.getStatus();
   return res.json(data);
 });
@@ -41,7 +41,7 @@ heatPumpRouter.get('/status', authorizeToken, async (req, res) => {
  * Returns the new status after the startup.
  * @return {Object} status: 'running' || 'softStart' || 'boosting'
  */
-heatPumpRouter.post('/start', authorizeToken, async (req, res) => {
+heatPumpRouter.post('/start', authorize, async (req, res) => {
   const { softStart } = req.body;
   let newStatus;
 
@@ -61,7 +61,7 @@ heatPumpRouter.post('/start', authorizeToken, async (req, res) => {
  * Returns the new status after stopping the heating.
  * @return {Object} status: 'stopped'
  */
-heatPumpRouter.post('/stop', authorizeToken, async (req, res) => {
+heatPumpRouter.post('/stop', authorize, async (req, res) => {
   await HeatPumpService.stopCircuitThree();
   const newStatus = await HeatPumpService.getStatus();
   return res.status(200).json(newStatus);
@@ -74,7 +74,7 @@ heatPumpRouter.post('/stop', authorizeToken, async (req, res) => {
  * containing start hour, end hour and temperature delta for each weekday.
  * @return {Object} { monday: { start: Number, end: Number, delta: Number }, ... }
  */
-heatPumpRouter.get('/schedules/:variable', authorizeToken, async (req, res) => {
+heatPumpRouter.get('/schedules/:variable', authorize, async (req, res) => {
   const { variable } = req.params;
   if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
     return res.json({
@@ -85,7 +85,7 @@ heatPumpRouter.get('/schedules/:variable', authorizeToken, async (req, res) => {
   return res.json(data);
 });
 
-heatPumpRouter.post('/schedules/:variable', authorizeToken, async (req, res) => {
+heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
   const { variable } = req.params;
   if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
     return res.status(400).json({
@@ -97,12 +97,12 @@ heatPumpRouter.post('/schedules/:variable', authorizeToken, async (req, res) => 
   return res.status(200).end();
 });
 
-heatPumpRouter.get('/scheduling', authorizeToken, async (req, res) => {
+heatPumpRouter.get('/scheduling', authorize, async (req, res) => {
   const data = await HeatPumpService.getScheduling();
   return res.json(data);
 });
 
-heatPumpRouter.post('/scheduling', authorizeToken, async (req, res) => {
+heatPumpRouter.post('/scheduling', authorize, async (req, res) => {
   const { scheduling } = req.body;
   const newStatus = await HeatPumpService.setScheduling(scheduling);
   return res.status(200).json(newStatus);

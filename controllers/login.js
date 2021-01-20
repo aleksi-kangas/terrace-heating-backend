@@ -1,6 +1,5 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import User from '../models/user';
 
 const loginRouter = new express.Router();
@@ -29,17 +28,11 @@ loginRouter.post('/', async (request, response) => {
     return response.status(401).json({ error: 'invalid username or password' });
   }
 
-  // Password is correct -> Generate JWT
-  const token = jwt.sign({
-    id: user.id,
-    username: user.username,
-    name: user.name,
-  }, process.env.JWT, {
-    expiresIn: 86400,
-  });
+  // Mutate session
+  request.session.loggedIn = true;
+  request.session.userId = user.id;
 
   return response
-    .cookie('token', token, { httpOnly: true })
     .status(200)
     .send({
       id: user.id,
