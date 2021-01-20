@@ -21,8 +21,6 @@ import logoutRouter from './controllers/logout';
 import sessionRouter from './controllers/session';
 // import userRouter from './controllers/users.js';
 
-const MongoStore = new ConnectMongo(session);
-
 // Connect to MongoDB database
 mongoose
   .connect(config.MONGODB_URI, {
@@ -44,11 +42,14 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Store for sessions
+const MongoStore = new ConnectMongo(session);
 const sessionStore = new MongoStore({
   mongooseConnection: connection,
   collection: 'sessions',
 });
 
+// Middleware for sessions
 const sessionMiddleware = session({
   secret: process.env.SESSIONS,
   resave: false,
@@ -75,28 +76,19 @@ app.use(errorHandler);
 
 const httpServer = createServer(app);
 
+/*
+The following contains logic for WebSocket communication via Socket.io.
+WebSockets allow server to send clients the queried heat-pump data in semi-real-time.
+ */
+
 const io = new Server(httpServer);
-/*
-const cookieParse = cookieParser();
-
-io.use((socket, next) => {
-  cookieParse(socket.client.request, socket.request.res, next);
-})
-
- */
-
-/*
-io.use((socket, next) => {
-  socket.client.request.originalUrl = socket.client.request.url;
-  sessionMiddleware(socket.client.request, socket.client.request.res, next);
-});
-
- */
+// Use session authentication for WebSocket connection
 io.use(SharedSession(sessionMiddleware));
 
 let clients = [];
 
 io.on('connection', (socket) => {
+  // Authorize client connection
   socket.on('login', async () => {
     if (socket.handshake.session.loggedIn) {
       clients.push(socket);
@@ -109,15 +101,7 @@ io.on('connection', (socket) => {
       });
     }
   });
-
-  socket.on('logout', () => {
-    console.log('logout');
-    clients = clients.filter(
-      (client) => client.handshake.session.userId !== socket.handshake.session.userId,
-    );
-    console.log(`Client ${socket.client.id} disconnected`);
-  });
-
+  // Remove client connection upon disconnect
   socket.on('disconnect', () => {
     clients = clients.filter(
       (client) => client.handshake.session.userId !== socket.handshake.session.userId,
@@ -126,10 +110,14 @@ io.on('connection', (socket) => {
   });
 });
 
+/**
+ * Cronjob for querying heat-pump values each minute.
+ * Queried values are saved to the database and sent to connected clients via WebSocket connection.
+ */
 cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusService.queryHeatPumpValues();
-    io.emit('heatPumpData', queriedData);
+    clients.forEach((client) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
