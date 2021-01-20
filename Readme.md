@@ -25,7 +25,7 @@ The features of the Express.js backend include:
 - Data is securely stored in MongoDB Cloud.
 - Offering semi real-time data for clients via Socket.io.
 - Simplified REST API providing a frontend means for displaying the heat-pump data.
-  - Secure authentication and authorization implemented.
+  - Secure session authorization with HTTP-only cookies implemented.
 - Providing the possibility to control selected heat-pump features related to terrace heating via ModBus protocol.
 
 ## Implementation
@@ -43,12 +43,13 @@ client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT }).then();
 
 ```JavaScript
 /**
- * A cron-job for querying the data from the heat pump each minute.
+ * Cronjob for querying heat-pump values each minute.
+ * Queried values are saved to the database and sent to connected clients via WebSocket connection.
  */
 cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusService.queryHeatPumpValues();
-    io.emit('heatPumpData', queriedData);
+    clients.forEach((client) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
@@ -66,25 +67,17 @@ cron.schedule('* * * * *', async () => {
  * Optional query strings year, month and day determine a date,
  * that is used for filtering and including heat pump data entries from that date onwards.
  *
- * @return {Array.<Object>} - contains heat pump entries from the given date onwards
+ * @return {Array.<Object>} - contains heat pump data from the given date onwards
  */
-heatPumpRouter.get('/', async (req, res, next) => {
-  try {
-    const user = await authorize(req);
-    if (user) {
-      // Optional query strings
-      const date = {
-        year: req.query.year,
-        month: req.query.month,
-        day: req.query.day,
-      };
-      const data = await HeatPumpService.getData(date);
-      return res.json(data);
-    }
-  } catch (exception) {
-    next(exception);
-  }
-  return res.status(401);
+heatPumpRouter.get('/', authorize, async (req, res) => {
+  // Optional query strings
+  const date = {
+    year: req.query.year,
+    month: req.query.month,
+    day: req.query.day,
+  };
+  const data = await HeatPumpService.getData(date);
+  return res.json(data);
 });
 ```
 
@@ -105,5 +98,6 @@ const startCircuitThree = async () => {
   PORT=3003
   MODBUS_HOST=  <IP for ModBus connection>
   MODBUS_PORT=  <Port for ModBus connection>
-  JWT=  <JsonWebToken key>
+  FRONTEND_URL=  <URL of the frontend>
+  SESSIONS=  <Key for session authentication
   ```

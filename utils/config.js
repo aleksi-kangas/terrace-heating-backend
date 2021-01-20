@@ -15,7 +15,6 @@ const config = {
   MODBUS_HOST: process.env.MODBUS_HOST,
   MODBUS_PORT: process.env.MODBUS_PORT,
   FRONTEND_URL: process.env.FRONTEND_URL,
-  JWT: process.env.JWT,
   SESSIONS: process.env.SESSIONS,
 };
 

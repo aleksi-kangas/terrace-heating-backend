@@ -36,7 +36,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: [`${process.env.FRONTEND_URL}`],
+  origin: [`${config.FRONTEND_URL}`],
   credentials: true,
 }));
 app.use(express.json());
@@ -51,7 +51,7 @@ const sessionStore = new MongoStore({
 
 // Middleware for sessions
 const sessionMiddleware = session({
-  secret: process.env.SESSIONS,
+  secret: config.SESSIONS,
   resave: false,
   saveUninitialized: true,
   store: sessionStore,
