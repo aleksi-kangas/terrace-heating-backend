@@ -15,10 +15,8 @@ import ModBusService from './utils/modBus';
 import User from './models/user';
 
 // Routers
-import heatPumpRouter from './controllers/heatPump';
-import loginRouter from './controllers/login';
-import logoutRouter from './controllers/logout';
-import sessionRouter from './controllers/session';
+import heatPumpRouter from './routes/heatPump';
+import authRouter from './routes/auth';
 // import userRouter from './controllers/users.js';
 
 // Connect to MongoDB database
@@ -65,9 +63,7 @@ app.use(sessionMiddleware);
 // Routes
 app.use(express.static('build'));
 app.use('/api/heat-pump', heatPumpRouter);
-app.use('/api/login', loginRouter);
-app.use('/api/logout', logoutRouter);
-app.use('/api/session', sessionRouter);
+app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
 
 // Middleware

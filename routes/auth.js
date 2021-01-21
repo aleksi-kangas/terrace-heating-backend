@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/user';
 
-const loginRouter = new express.Router();
+const authRouter = new express.Router();
 
 /**
  * Endpoint for user login.
@@ -10,7 +10,7 @@ const loginRouter = new express.Router();
  * if the credentials were valid.
  * @return {Object} { token: String, username: String, name: String, id: String }
  */
-loginRouter.post('/', async (request, response) => {
+authRouter.post('/login', async (request, response) => {
   const credentials = {
     username: request.body.username,
     password: request.body.password,
@@ -41,4 +41,27 @@ loginRouter.post('/', async (request, response) => {
     });
 });
 
-export default loginRouter;
+/**
+ * Endpoint for user logout.
+ * Removes the http-only cookie from response.
+ * @return {Object} { token: String, username: String, name: String, id: String }
+ */
+authRouter.post('/logout', (request, response) => {
+  request.session.destroy(() => {
+    response.redirect('/');
+  });
+});
+
+authRouter.get('/session', async (request, response) => {
+  if (request.session.loggedIn) {
+    const user = await User.findById(request.session.userId);
+    return response.send({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+    });
+  }
+  return response.status(401).end();
+});
+
+export default authRouter;
