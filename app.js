@@ -61,10 +61,13 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 
 // Routes
-app.use(express.static('build'));
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
+app.use(express.static('build'));
+app.get('*', (request, response) => {
+  response.sendFile('index.html', { root: '/build/' });
+});
 
 // Middleware
 app.use(unknownEndpoint);
