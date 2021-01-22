@@ -1,6 +1,8 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cron from 'node-cron';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import session from 'express-session';
 import ConnectMongo from 'connect-mongo';
 import SharedSession from 'express-socket.io-session';
@@ -63,9 +65,11 @@ app.use(sessionMiddleware);
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
-app.use(express.static('build'));
+// eslint-disable-next-line no-underscore-dangle
+const __dirname = fileURLToPath(import.meta.url);
+app.use(express.static(path.join(__dirname, '../build')));
 app.get('*', (request, response) => {
-  response.sendFile('index.html', { root: '/build/' });
+  response.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
 // Middleware
