@@ -17,7 +17,7 @@ import User from './models/user';
 // Routers
 import heatPumpRouter from './routes/heatPump';
 import authRouter from './routes/auth';
-// import userRouter from './controllers/users.js';
+// import userRouter from './routes/users';
 
 // Connect to MongoDB database
 mongoose
@@ -34,7 +34,6 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: [`${config.FRONTEND_URL}`],
   credentials: true,
 }));
 app.use(express.json());
@@ -80,7 +79,7 @@ The following contains logic for WebSocket communication via Socket.io.
 WebSockets allow server to send clients the queried heat-pump data in semi-real-time.
  */
 
-const io = new Server(httpServer);
+const io = new Server(httpServer, { cors: { origin: '*' } });
 // Use session authentication for WebSocket connection
 io.use(SharedSession(sessionMiddleware));
 

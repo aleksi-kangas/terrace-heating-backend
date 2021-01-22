@@ -1,9 +1,9 @@
 import ModBus from 'modbus-serial';
 import moment from 'moment';
-import config from './config.js';
-import HeatPump from '../models/heatPump.js';
-import CompressorStatus from '../models/compressorStatus.js';
-import registers from './registers.js';
+import config from './config';
+import HeatPump from '../models/heatPump';
+import CompressorStatus from '../models/compressorStatus';
+import registers from './registers';
 
 /**
  * Contains logic for communicating with the heat pump via ModBus-protocol.
@@ -37,17 +37,19 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
   let compressorUsage = null;
   const latestEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
   if (compressorRunning && latestEntry && !latestEntry.compressorRunning) {
-    // Current update is an end to the previous cycle and a start for a new one.
+    // Current update is an edge 'not running' -> 'running'.
     // Calculate the duration of the last cycle (running + not running).
-    const startEntry = await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1);
-    const stopEntry = await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1);
-    const start = moment(startEntry[0].time);
-    const stop = moment(stopEntry[0].time);
-    const cycleDuration = moment.duration(timeStamp.diff(start));
-    const runningDuration = moment.duration(stop.diff(start));
-    // Usage of the compressor during last cycle.
-    // eslint-disable-next-line max-len
-    compressorUsage = Math.round((runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100) / 100;
+    const lastStartEntry = await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    const lastStopEntry = await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    if (lastStartEntry.length !== 0 && lastStopEntry.length !== 0) {
+      const start = moment(lastStartEntry[0].time);
+      const stop = moment(lastStopEntry[0].time);
+      const cycleDuration = moment.duration(timeStamp.diff(start));
+      const runningDuration = moment.duration(stop.diff(start));
+      // Usage of the compressor during last cycle.
+      // eslint-disable-next-line max-len
+      compressorUsage = Math.round((runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100) / 100;
+    }
     // Add start entry
     const compressorStatusEntry = new CompressorStatus({
       type: 'start',
@@ -55,7 +57,20 @@ const parseCompressorUsage = async (compressorRunning, timeStamp) => {
     });
     await compressorStatusEntry.save();
   } else if (!compressorRunning && latestEntry && latestEntry.compressorRunning) {
-    // Current update is an end point.
+    // Fetch previous end point that resembles the starting point for this cycle
+    const lastStopEntry = await CompressorStatus.find({ type: { $eq: 'end' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    // Fetch previous start point that resembles the middle point for this cycle
+    const lastStartEntry = await CompressorStatus.find({ type: { $eq: 'start' } }).sort({ field: 'asc', _id: -1 }).limit(1);
+    if (lastStopEntry.length !== 0 && lastStartEntry.length !== 0) {
+      const stop = moment(lastStopEntry[0].time);
+      const start = moment(lastStartEntry[0].time);
+      // Calculate running duration and the whole cycle duration
+      const runningDuration = moment.duration(timeStamp.diff(start));
+      const cycleDuration = moment.duration(timeStamp.diff(stop));
+      // Usage of the compressor during last cycle.
+      // eslint-disable-next-line max-len
+      compressorUsage = Math.round((runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100) / 100;
+    }
     // Add end entry
     const compressorStatusEntry = new CompressorStatus({
       type: 'end',
