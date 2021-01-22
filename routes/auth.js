@@ -61,7 +61,7 @@ authRouter.get('/session', async (request, response) => {
       username: user.username,
     });
   }
-  return response.status(401).end();
+  return response.status(401).json({ error: 'session invalid' });
 });
 
 export default authRouter;
