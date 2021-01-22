@@ -9,7 +9,6 @@ import uniqueValidator from 'mongoose-unique-validator';
  * @property username - user's username
  * @property name - user's name
  * @property passwordHash - hashed password by bcryptjs-library
- * @property alerts - array of the user's alerts
  */
 const userSchema = new mongoose.Schema({
   username: {
@@ -27,10 +26,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  alerts: [{
-    type: mongoose.Schema.Types.ObjectID,
-    ref: 'Alert',
-  }],
 });
 
 userSchema.plugin(uniqueValidator);
