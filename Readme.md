@@ -86,6 +86,9 @@ heatPumpRouter.get('/', authorize, async (req, res) => {
   - Example:
 
 ```JavaScript
+/**
+ * Sets the number of active heat distribution circuits to three, i.e. enables circuit three.
+ */
 const startCircuitThree = async () => {
   await client.writeRegister(5100, 3);
 };
@@ -98,6 +101,5 @@ const startCircuitThree = async () => {
   PORT=3003
   MODBUS_HOST=  <IP for ModBus connection>
   MODBUS_PORT=  <Port for ModBus connection>
-  FRONTEND_URL=  <URL of the frontend>
-  SESSIONS=  <Key for session authentication
+  SESSIONS=  <Key for session authentication>
   ```
