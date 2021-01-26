@@ -6,9 +6,9 @@ const authRouter = new express.Router();
 
 /**
  * Endpoint for user login.
- * Verifies the given credentials and returns a user object with JsonWebToken,
- * if the credentials were valid.
- * @return {Object} { token: String, username: String, name: String, id: String }
+ * Verifies the given credentials and registers the session.
+ * Returns user information.
+ * @return {Object} { username: String, name: String, id: String }
  */
 authRouter.post('/login', async (request, response) => {
   const credentials = {
@@ -42,9 +42,7 @@ authRouter.post('/login', async (request, response) => {
 });
 
 /**
- * Endpoint for user logout.
- * Removes the http-only cookie from response.
- * @return {Object} { token: String, username: String, name: String, id: String }
+ * Endpoint for user logout. Deletes the session.
  */
 authRouter.post('/logout', (request, response) => {
   request.session.destroy(() => {
@@ -52,6 +50,11 @@ authRouter.post('/logout', (request, response) => {
   });
 });
 
+/**
+ * Endpoint for fetching session status.
+ * Returns user information if session (HTTP-only cookie) is valid.
+ * @return {Object} { username: String, name: String, id: String }
+ */
 authRouter.get('/session', async (request, response) => {
   if (request.session.loggedIn) {
     const user = await User.findById(request.session.userId);

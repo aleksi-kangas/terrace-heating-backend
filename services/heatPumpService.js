@@ -34,9 +34,32 @@ const getData = async (date) => {
   return HeatPump.find({ time: { $gt: dateLimit } });
 };
 
+/**
+ * Fetches boosting schedule of the given variable from the heat-pump.
+ * @param variable 'lowerTank' || 'heatDistCircuit3'
+ * @return Object { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
+ */
 const getSchedule = async (variable) => ModBusService.querySchedule(variable);
 
+/**
+ * Sets the boosting schedule of the given variable to the heat-pump.
+ * @param variableSchedule Object containing schedule of either 'lowerTank' or 'heatDistCircuit3'
+ * e.g. {
+ * variable: 'lowerTank' || 'heatDistCircuit3',
+ * schedule: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
+ * }
+ */
 const setSchedule = async (variableSchedule) => ModBusService.setSchedule(variableSchedule);
+
+/**
+ * Retrieves the status of scheduling,
+ * and schedules for 'lowerTank' and 'heatDistCircuit3' from the heat-pump.
+ * @return Object {
+ * scheduling: Boolean,
+ * lowerTank: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... },
+ * heatDistCircuit3: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... },
+ * }
+ */
 
 const getScheduling = async () => {
   const scheduling = await ModBusService.getSchedulingStatus();
@@ -73,11 +96,20 @@ const getStatus = async () => {
   return { status: 'stopped' };
 };
 
+/**
+ * Starts the heat distribution circuit 3 of the heat-pump.
+ * It includes turning on circuit 3 and enabling boosting schedule.
+ * @return {Promise<void>}
+ */
 const startCircuitThree = async () => {
   await ModBusService.startCircuitThree();
   await ModBusService.enableScheduling();
 };
 
+/**
+ * Soft-starts the heat distribution circuit 3 of the heat-pump.
+ * Soft-starting means that circuit 3 is turned on and 12 hours later boosting schedule is enabled.
+ */
 const softStartCircuitThree = async () => {
   softStart = true;
   const timeStamp = new Date();
@@ -89,12 +121,21 @@ const softStartCircuitThree = async () => {
   });
 };
 
+/**
+ * Stops the heat distribution circuit 3 of the heat-pump.
+ * Includes disabling of the boosting schedule.
+ */
 const stopCircuitThree = async () => {
   await ModBusService.disableScheduling();
   await ModBusService.stopCircuitThree();
   softStart = false;
 };
 
+/**
+ * Enables/disables boosting schedule for the heat-pump.
+ * When active, 'lowerTank' and 'heatDistCircuit3' are boosted according to the set schedules.
+ * @param schedulingEnable Boolean
+ */
 const setScheduling = async (schedulingEnable) => {
   if (schedulingEnable) {
     // Turning on scheduling

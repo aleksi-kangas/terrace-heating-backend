@@ -230,6 +230,14 @@ const querySchedule = async (variable) => {
   return null;
 };
 
+/**
+ * Writes the schedule of the given variable to the heat-pump.
+ * @param variableSchedule Object
+ * {
+ *  variable: 'lowerTank' || 'heatDistCircuit3',
+ *  schedule: { sunday: { start: Number, end: Number, delta: Number }, ... }
+ * }
+ */
 const setSchedule = async (variableSchedule) => {
   const { variable, schedule } = variableSchedule;
   if (variable === 'lowerTank') {
@@ -273,12 +281,22 @@ const stopCircuitThree = async () => {
   await client.writeRegister(5100, 2);
 };
 
+/**
+ * Writes true (enables) to the scheduling coil of the heat-pump.
+ */
 const enableScheduling = async () => client.writeCoil(registers.schedulingActive, true);
 
+/**
+ * Writes false (disables) to the scheduling coil of the heat-pump.
+ */
 const disableScheduling = async () => {
   await client.writeCoil(registers.schedulingActive, false);
 };
 
+/**
+ * Queries heat-pump for scheduling status, i.e. enabled/disabled.
+ * @return Boolean
+ */
 const getSchedulingStatus = async () => {
   const status = await client.readCoils(134, 1);
   return status.data[0];

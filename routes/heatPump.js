@@ -85,6 +85,13 @@ heatPumpRouter.get('/schedules/:variable', authorize, async (req, res) => {
   return res.json(data);
 });
 
+/**
+ * Endpoint for setting a boosting schedule of a variable.
+ * Allowed variables are 'lowerTank' and 'heatDistCircuit3'.
+ * Requires the boosting schedule of the variable,
+ * containing start hour, end hour and temperature delta for each weekday.
+ * e.g. { monday: { start: Number, end: Number, delta: Number }, ... }
+ */
 heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
   const { variable } = req.params;
   if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
@@ -97,11 +104,24 @@ heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
   return res.status(200).end();
 });
 
+/**
+ * Endpoint for fetching scheduling status and schedules for 'lowerTank' and 'heatDistCircuit3'.
+ * @return {Object}
+ * {
+ *  scheduling: true || false,
+ *  lowerTank: { monday: { start: Number, end: Number, delta: Number }, ... },
+ *  heatDistCircuit3: { monday: { start: Number, end: Number, delta: Number }, ... }
+ * }
+ */
 heatPumpRouter.get('/scheduling', authorize, async (req, res) => {
   const data = await HeatPumpService.getScheduling();
   return res.json(data);
 });
 
+/**
+ * Endpoint for enabling/disabling scheduling.
+ * Requires an Object { scheduling: true || false }.
+ */
 heatPumpRouter.post('/scheduling', authorize, async (req, res) => {
   const { scheduling } = req.body;
   const newStatus = await HeatPumpService.setScheduling(scheduling);
