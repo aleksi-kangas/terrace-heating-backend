@@ -56,6 +56,7 @@ const sessionMiddleware = session({
   store: sessionStore,
   cookie: {
     maxAge: 1000 * 60 * 60,
+    httpOnly: true,
   },
 });
 
