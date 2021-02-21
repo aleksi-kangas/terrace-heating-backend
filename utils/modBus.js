@@ -3,6 +3,7 @@ import moment from 'moment';
 import config from './config';
 import HeatPump from '../models/heatPump';
 import CompressorStatus from '../models/compressorStatus';
+import TankLimit from '../models/tankLimit';
 import registers from './registers';
 
 /**
@@ -195,6 +196,35 @@ const parseCircuitThreeSchedule = (times, deltas) => ({
   },
 });
 
+const parseTankLimits = async (lowerTankLimits, upperTankLimits) => {
+  const latestLimits = await TankLimit.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
+  if (latestLimits && latestLimits.length !== 0) {
+    // Calculate duration since last entry
+    const threshold = moment().subtract(1, 'hour');
+    if (threshold.diff(moment(latestLimits.time)) >= 0) {
+      // Over an hour has passed since the last limits entry -> add new limits entry
+      const newLimits = new TankLimit({
+        time: new Date(),
+        lowerTankLowerLimit: lowerTankLimits[0],
+        lowerTankUpperLimit: lowerTankLimits[1],
+        upperTankLowerLimit: upperTankLimits[0],
+        upperTankUpperLimit: upperTankLimits[1],
+      });
+      await newLimits.save();
+    }
+  } else {
+    // Initial limits entry
+    const newLimits = new TankLimit({
+      time: new Date(),
+      lowerTankLowerLimit: lowerTankLimits[0],
+      lowerTankUpperLimit: lowerTankLimits[1],
+      upperTankLowerLimit: upperTankLimits[0],
+      upperTankUpperLimit: upperTankLimits[1],
+    });
+    await newLimits.save();
+  }
+};
+
 // Connect to the heat pump via ModBus-protocol
 const client = new ModBus();
 client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
@@ -208,6 +238,9 @@ const queryHeatPumpValues = async () => {
   const values = await client.readHoldingRegisters(1, 120);
   const compressorStatus = await client.readHoldingRegisters(registers.compressorStatus, 1);
   const parsedData = await parseHeatPumpData(values.data, compressorStatus.data[0]);
+  const lowerTankLimits = await client.readHoldingRegisters(75, 2);
+  const upperTankLimits = await client.readHoldingRegisters(79, 2);
+  await parseTankLimits(lowerTankLimits.data, upperTankLimits.data);
   const heatPumpData = new HeatPump(parsedData);
   return heatPumpData.save();
 };
