@@ -198,22 +198,29 @@ const parseCircuitThreeSchedule = (times, deltas) => ({
 
 const parseTankLimits = async (lowerTankLimits, upperTankLimits) => {
   const latestLimits = await TankLimit.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
+  let createNewEntry = false;
+
   if (latestLimits && latestLimits.length !== 0) {
+    if (latestLimits.lowerTankLowerLimit !== lowerTankLimits[0]
+      || latestLimits.lowerTankUpperLimit !== lowerTankLimits[1]
+      || latestLimits.upperTankLowerLimit !== upperTankLimits[0]
+      || latestLimits.upperTankUpperLimit !== upperTankLimits[1]) {
+      // One of the limits has changed -> add new limits entry
+      createNewEntry = true;
+    }
+
     // Calculate duration since last entry
     const threshold = moment().subtract(1, 'hour');
     if (threshold.diff(moment(latestLimits.time)) >= 0) {
       // Over an hour has passed since the last limits entry -> add new limits entry
-      const newLimits = new TankLimit({
-        time: new Date(),
-        lowerTankLowerLimit: lowerTankLimits[0],
-        lowerTankUpperLimit: lowerTankLimits[1],
-        upperTankLowerLimit: upperTankLimits[0],
-        upperTankUpperLimit: upperTankLimits[1],
-      });
-      await newLimits.save();
+      createNewEntry = true;
     }
   } else {
-    // Initial limits entry
+    // No entries exist -> add new limits entry
+    createNewEntry = true;
+  }
+
+  if (createNewEntry) {
     const newLimits = new TankLimit({
       time: new Date(),
       lowerTankLowerLimit: lowerTankLimits[0],
