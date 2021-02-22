@@ -22,6 +22,10 @@ const heatPumpSchema = new mongoose.Schema({
   activeHeatDistCircuits: { type: Number },
   compressorRunning: { type: Boolean },
   compressorUsage: { type: Number },
+  lowerTankLowerLimit: { type: Number },
+  lowerTankUpperLimit: { type: Number },
+  upperTankLowerLimit: { type: Number },
+  upperTankUpperLimit: { type: Number },
 });
 
 /**

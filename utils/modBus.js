@@ -3,7 +3,6 @@ import moment from 'moment';
 import config from './config';
 import HeatPump from '../models/heatPump';
 import CompressorStatus from '../models/compressorStatus';
-import TankLimit from '../models/tankLimit';
 import registers from './registers';
 
 /**
@@ -95,6 +94,55 @@ const parseCompressorUsage = async (compressorRunning, currentQueryTime) => {
 };
 
 /**
+ * Parser for lowerTank and upperTank limits.
+ * Returns new limits every ten minutes or if any of the limits have changed.
+ * Otherwise returned limits will be null.
+ * @param lowerTankLowerLimit current value of lowerTankLowerLimit
+ * @param lowerTankUpperLimit current value of lowerTankUpperLimit
+ * @param upperTankLowerLimit current value of upperTankLowerLimit
+ * @param upperTankUpperLimit current value of upperTankUpperLimit
+ * @param timeStamp time of the current query
+ * @return Object containing new limits
+ */
+const parseTankLimits = async (
+  lowerTankLowerLimit, lowerTankUpperLimit, upperTankLowerLimit, upperTankUpperLimit, timeStamp,
+) => {
+  const latestHeatPumpEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
+
+  // Updating limits every ten minutes
+  if (!latestHeatPumpEntry || timeStamp.minutes() % 10 === 0) {
+    return {
+      lowerTankLowerLimit,
+      lowerTankUpperLimit,
+      upperTankLowerLimit,
+      upperTankUpperLimit,
+    };
+  }
+
+  const result = {
+    lowerTankLowerLimit: null,
+    lowerTankUpperLimit: null,
+    upperTankLowerLimit: null,
+    upperTankUpperLimit: null,
+  };
+
+  // Limits have changed
+  if (latestHeatPumpEntry.lowerTankLowerLimit !== lowerTankLowerLimit) {
+    result.lowerTankLowerLimit = lowerTankLowerLimit;
+  }
+  if (latestHeatPumpEntry.lowerTankUpperLimit !== lowerTankUpperLimit) {
+    result.lowerTankUpperLimit = lowerTankUpperLimit;
+  }
+  if (latestHeatPumpEntry.upperTankLowerLimit !== upperTankLowerLimit) {
+    result.upperTankLowerLimit = upperTankLowerLimit;
+  }
+  if (latestHeatPumpEntry.upperTankUpperLimit !== upperTankUpperLimit) {
+    result.upperTankUpperLimit = upperTankUpperLimit;
+  }
+  return result;
+};
+
+/**
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} - contains predetermined signed heat pump data
  */
@@ -102,6 +150,7 @@ const parseHeatPumpData = async (data, compressorStatus) => {
   const compressorRunning = compressorStatus === 1;
   const timeStamp = new Date();
   const compressorUsage = await parseCompressorUsage(compressorRunning, moment(timeStamp));
+  const limits = await parseTankLimits(data[74], data[75], data[78], data[79], moment(timeStamp));
 
   return ({
     time: timeStamp,
@@ -117,6 +166,7 @@ const parseHeatPumpData = async (data, compressorStatus) => {
     heatDistCircuitTemp3: signUnsignedValues(data[116]),
     compressorRunning,
     compressorUsage,
+    ...limits,
   });
 };
 
@@ -196,42 +246,6 @@ const parseCircuitThreeSchedule = (times, deltas) => ({
   },
 });
 
-const parseTankLimits = async (lowerTankLimits, upperTankLimits) => {
-  const latestLimits = await TankLimit.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
-  let createNewEntry = false;
-
-  if (latestLimits && latestLimits.length !== 0) {
-    if (latestLimits.lowerTankLowerLimit !== lowerTankLimits[0]
-      || latestLimits.lowerTankUpperLimit !== lowerTankLimits[1]
-      || latestLimits.upperTankLowerLimit !== upperTankLimits[0]
-      || latestLimits.upperTankUpperLimit !== upperTankLimits[1]) {
-      // One of the limits has changed -> add new limits entry
-      createNewEntry = true;
-    }
-
-    // Calculate duration since last entry
-    const threshold = moment().subtract(1, 'hour');
-    if (threshold.diff(moment(latestLimits.time)) >= 0) {
-      // Over an hour has passed since the last limits entry -> add new limits entry
-      createNewEntry = true;
-    }
-  } else {
-    // No entries exist -> add new limits entry
-    createNewEntry = true;
-  }
-
-  if (createNewEntry) {
-    const newLimits = new TankLimit({
-      time: new Date(),
-      lowerTankLowerLimit: lowerTankLimits[0],
-      lowerTankUpperLimit: lowerTankLimits[1],
-      upperTankLowerLimit: upperTankLimits[0],
-      upperTankUpperLimit: upperTankLimits[1],
-    });
-    await newLimits.save();
-  }
-};
-
 // Connect to the heat pump via ModBus-protocol
 const client = new ModBus();
 client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT })
@@ -245,9 +259,6 @@ const queryHeatPumpValues = async () => {
   const values = await client.readHoldingRegisters(1, 120);
   const compressorStatus = await client.readHoldingRegisters(registers.compressorStatus, 1);
   const parsedData = await parseHeatPumpData(values.data, compressorStatus.data[0]);
-  const lowerTankLimits = await client.readHoldingRegisters(75, 2);
-  const upperTankLimits = await client.readHoldingRegisters(79, 2);
-  await parseTankLimits(lowerTankLimits.data, upperTankLimits.data);
   const heatPumpData = new HeatPump(parsedData);
   return heatPumpData.save();
 };
