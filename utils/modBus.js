@@ -127,16 +127,20 @@ const parseTankLimits = async (
   };
 
   // Limits have changed
-  if (latestHeatPumpEntry.lowerTankLowerLimit !== lowerTankLowerLimit) {
+  if (latestHeatPumpEntry.lowerTankLowerLimit
+    && latestHeatPumpEntry.lowerTankLowerLimit !== lowerTankLowerLimit) {
     result.lowerTankLowerLimit = lowerTankLowerLimit;
   }
-  if (latestHeatPumpEntry.lowerTankUpperLimit !== lowerTankUpperLimit) {
+  if (latestHeatPumpEntry.lowerTankUpperLimit
+    && latestHeatPumpEntry.lowerTankUpperLimit !== lowerTankUpperLimit) {
     result.lowerTankUpperLimit = lowerTankUpperLimit;
   }
-  if (latestHeatPumpEntry.upperTankLowerLimit !== upperTankLowerLimit) {
+  if (latestHeatPumpEntry.upperTankLowerLimit
+    && latestHeatPumpEntry.upperTankLowerLimit !== upperTankLowerLimit) {
     result.upperTankLowerLimit = upperTankLowerLimit;
   }
-  if (latestHeatPumpEntry.upperTankUpperLimit !== upperTankUpperLimit) {
+  if (latestHeatPumpEntry.UpperTankUpperLimit
+    && latestHeatPumpEntry.upperTankUpperLimit !== upperTankUpperLimit) {
     result.upperTankUpperLimit = upperTankUpperLimit;
   }
   return result;
