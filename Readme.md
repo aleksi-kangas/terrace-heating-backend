@@ -103,3 +103,8 @@ const startCircuitThree = async () => {
   MODBUS_PORT=  <Port for ModBus connection>
   SESSIONS=  <Key for session authentication>
   ```
+- [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) installation requires some extra steps:
+  - Install Windows Build Tools with ```npm install --global windows-build-tools```
+  - Install modbus-serial with ```npm install modbus-serial```
+    - If the installation fails, try the following command ```npm install modbus-serial --unsafe-perm --build-from-source```
+- Run ```npm install``` as usual
