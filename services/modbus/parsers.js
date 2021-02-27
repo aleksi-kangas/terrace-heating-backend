@@ -60,9 +60,6 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
       // Calculate running duration and the whole cycle duration
       runningDuration = moment.duration(currentQueryTime.diff(startEntryTime));
       cycleDuration = moment.duration(currentQueryTime.diff(stopEntryTime));
-      compressorUsage = parseInt(
-        (runningDuration.asMinutes() / cycleDuration.asMinutes()).toFixed(2), 10,
-      ) * 100;
     }
     // Add cycle end entry
     const compressorStatusEntry = new CompressorStatus({
@@ -74,7 +71,9 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
 
   // Usage of the compressor during last cycle.
   if (runningDuration && cycleDuration) {
-    compressorUsage = (runningDuration.asMinutes() / cycleDuration.asMinutes()).toFixed(2) * 100;
+    compressorUsage = Math.round(
+      (runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100,
+    ) / 100;
   }
   return compressorUsage;
 };
