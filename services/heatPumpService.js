@@ -1,7 +1,7 @@
 import moment from 'moment';
 import schedule from 'node-schedule';
 import HeatPump from '../models/heatPump';
-import ModBusService from '../utils/modBus';
+import ModBusApi from './modbus/api';
 
 let softStart = false;
 
@@ -39,7 +39,7 @@ const getData = async (date) => {
  * @param variable 'lowerTank' || 'heatDistCircuit3'
  * @return Object { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
  */
-const getSchedule = async (variable) => ModBusService.querySchedule(variable);
+const getSchedule = async (variable) => ModBusApi.querySchedule(variable);
 
 /**
  * Sets the boosting schedule of the given variable to the heat-pump.
@@ -49,7 +49,7 @@ const getSchedule = async (variable) => ModBusService.querySchedule(variable);
  * schedule: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
  * }
  */
-const setSchedule = async (variableSchedule) => ModBusService.setSchedule(variableSchedule);
+const setSchedule = async (variableSchedule) => ModBusApi.setSchedule(variableSchedule);
 
 /**
  * Retrieves the status of scheduling,
@@ -62,10 +62,10 @@ const setSchedule = async (variableSchedule) => ModBusService.setSchedule(variab
  */
 
 const getScheduling = async () => {
-  const scheduling = await ModBusService.getSchedulingStatus();
-  const lowerTank = await ModBusService.querySchedule('lowerTank');
-  const heatDistCircuit3 = await ModBusService.querySchedule('heatDistCircuit3');
-  return { scheduling, lowerTank, heatDistCircuit3 };
+  const scheduling = await ModBusApi.querySchedulingStatus();
+  const lowerTank = await ModBusApi.querySchedule('lowerTank');
+  const heatDistCircuitThree = await ModBusApi.querySchedule('heatDistCircuit3');
+  return { scheduling, lowerTank, heatDistCircuit3: heatDistCircuitThree };
 };
 
 /**
@@ -73,7 +73,7 @@ const getScheduling = async () => {
  * @return {Number} - the amount of active heat distribution circuits (usually 2 or 3)
  */
 const getStatus = async () => {
-  const circuits = await ModBusService.queryActiveCircuits();
+  const circuits = await ModBusApi.queryActiveCircuits();
   const schedulingActive = await getScheduling();
   if (circuits === 3) {
     if (softStart) {
@@ -102,8 +102,8 @@ const getStatus = async () => {
  * @return {Promise<void>}
  */
 const startCircuitThree = async () => {
-  await ModBusService.startCircuitThree();
-  await ModBusService.enableScheduling();
+  await ModBusApi.startCircuitThree();
+  await ModBusApi.enableScheduling();
 };
 
 /**
@@ -114,10 +114,10 @@ const softStartCircuitThree = async () => {
   softStart = true;
   const timeStamp = new Date();
   timeStamp.setHours(timeStamp.getHours() + 12);
-  await ModBusService.startCircuitThree();
+  await ModBusApi.startCircuitThree();
   schedule.scheduleJob(timeStamp, async () => {
     softStart = false;
-    await ModBusService.enableScheduling();
+    await ModBusApi.enableScheduling();
   });
 };
 
@@ -126,8 +126,8 @@ const softStartCircuitThree = async () => {
  * Includes disabling of the boosting schedule.
  */
 const stopCircuitThree = async () => {
-  await ModBusService.disableScheduling();
-  await ModBusService.stopCircuitThree();
+  await ModBusApi.disableScheduling();
+  await ModBusApi.stopCircuitThree();
   softStart = false;
 };
 
@@ -140,12 +140,12 @@ const setScheduling = async (schedulingEnable) => {
   if (schedulingEnable) {
     // Turning on scheduling
     softStart = false;
-    await ModBusService.enableScheduling();
+    await ModBusApi.enableScheduling();
     return getStatus();
   }
   if (!schedulingEnable) {
     // Turning off scheduling
-    await ModBusService.disableScheduling();
+    await ModBusApi.disableScheduling();
     return getStatus();
   }
   return null;

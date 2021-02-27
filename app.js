@@ -13,7 +13,7 @@ import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { errorHandler, unknownEndpoint } from './utils/middleware';
 import config from './utils/config';
-import ModBusService from './utils/modBus';
+import ModBusApi from './services/modbus/api';
 import User from './models/user';
 
 // Routers
@@ -119,7 +119,7 @@ io.on('connection', (socket) => {
  */
 cron.schedule('* * * * *', async () => {
   try {
-    const queriedData = await ModBusService.queryHeatPumpValues();
+    const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
   } catch (exception) {

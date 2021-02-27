@@ -1,3 +1,6 @@
+/**
+ * ModBus register addresses.
+ */
 const registers = {
   compressorStatus: 5158,
   schedulingActive: 134,
@@ -10,7 +13,7 @@ const registers = {
     saturday: { start: 5019, end: 5026, delta: 42 },
     sunday: { start: 5020, end: 5027, delta: 43 },
   },
-  heatDistCircuit3: {
+  heatDistCircuitThree: {
     monday: { start: 5214, end: 5213, delta: 107 },
     tuesday: { start: 5211, end: 5212, delta: 106 },
     wednesday: { start: 5220, end: 5221, delta: 110 },
