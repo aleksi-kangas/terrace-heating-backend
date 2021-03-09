@@ -1,3 +1,6 @@
+import moment from 'moment';
+import HeatPump from '../../models/heatPump';
+
 /**
  * Helper function for signing an unsigned 16 bit number.
  * @param value - number to be signed
@@ -14,6 +17,12 @@ export const signValue = (value) => {
   return signed;
 };
 
-const Helpers = { signValue };
+export const recordsCleanup = async () => {
+  const now = moment();
+  const threshold = now.subtract(30, 'days');
+  await HeatPump.deleteMany({ time: { $lt: threshold } });
+};
+
+const Helpers = { signValue, recordsCleanup };
 
 export default Helpers;

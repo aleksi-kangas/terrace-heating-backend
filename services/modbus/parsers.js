@@ -29,7 +29,7 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
   const startEntryTime = lastStartEntry ? moment(lastStartEntry.time) : null;
   const stopEntryTime = lastStopEntry ? moment(lastStopEntry.time) : null;
 
-  let compressorUsage;
+  let compressorUsage = null;
   let runningDuration;
   let cycleDuration;
 
