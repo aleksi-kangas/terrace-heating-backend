@@ -1,12 +1,18 @@
 import bcryptjs from 'bcryptjs';
-import mongoose from 'mongoose';
+import * as mongoose from 'mongoose';
 import User from '../models/user';
+
+type UserType = {
+  username: string,
+  name: string,
+  passwordHash: string,
+}
 
 /**
  * Fetches all Users from MongoDB.
  * @return {Array<Object>} users
  */
-const getAll = async () => {
+const getAll = async (): Promise<UserType[]> => {
   const users = await User.find({});
   return users.map((user) => user.toJSON());
 };
@@ -18,15 +24,13 @@ const getAll = async () => {
  * @param password string
  * @return {Promise<void|Promise|*>} saved user
  */
-const create = async (username, name, password) => {
+const create = async (username: string, name: string, password: string): Promise<UserType> => {
   if (!password || password.length < 3) {
     // Throw validation error
-    const validationError = new mongoose.Error.ValidationError(null);
-    validationError
-      .addError(
-        'password',
-        new mongoose.Error.ValidatorError({ message: 'Password must be at least 3 characters long' }),
-      );
+    const validationError = new mongoose.Error.ValidationError(this);
+    validationError.errors.properties = new mongoose.Error.ValidatorError(
+      'Password must be at least 3 characters long',
+    );
     throw validationError;
   }
   const passwordHash = await bcryptjs.hash(password, 10);
@@ -35,7 +39,10 @@ const create = async (username, name, password) => {
     name,
     passwordHash,
   });
-  return user.save();
+  await user.save();
+  return {
+    username, name, passwordHash,
+  };
 };
 
 export default {

@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import uniqueValidator from 'mongoose-unique-validator';
+import * as mongoose from 'mongoose';
+import * as uniqueValidator from 'mongoose-unique-validator';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 
@@ -36,13 +36,13 @@ userSchema.plugin(uniqueValidator);
  * Changes the name of the id property (from _id to id).
  * Deletes unnecessary properties _id and __v (version) provided by MongoDB.
  */
-userSchema.set('toJSON', {
-  transform: (doc, obj) => {
-    obj.id = obj._id.toString(); // Rename id property
-    delete obj._id;
-    delete obj.__v; // Delete version property
-  },
-});
+// userSchema.set('toJSON', {
+//   transform: (doc, obj) => {
+//     obj.id = obj._id.toString(); // Rename id property
+//     delete obj._id;
+//     delete obj.__v; // Delete version property
+//   },
+// });
 
 const User = mongoose.model('User', userSchema);
 

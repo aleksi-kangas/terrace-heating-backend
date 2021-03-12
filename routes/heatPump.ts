@@ -1,8 +1,9 @@
-import express from 'express';
+import * as express from 'express';
 import HeatPumpService from '../services/heatPumpService';
 import { authorize } from '../utils/middleware';
+import { ScheduleVariable } from '../utils/types';
 
-const heatPumpRouter = new express.Router();
+const heatPumpRouter = express.Router();
 
 /**
  * Endpoint for fetching heat pump data.
@@ -15,9 +16,9 @@ const heatPumpRouter = new express.Router();
 heatPumpRouter.get('/', authorize, async (req, res) => {
   // Optional query strings
   const date = {
-    year: req.query.year,
-    month: req.query.month,
-    day: req.query.day,
+    year: String(req.query.year),
+    month: String(req.query.month),
+    day: String(req.query.day),
   };
   const data = await HeatPumpService.getData(date);
   return res.json(data);
@@ -28,7 +29,7 @@ heatPumpRouter.get('/', authorize, async (req, res) => {
  * Status is one of 'running', 'stopped', 'softStart' or 'boosting'.
  * @return {Object} status: 'running' || 'stopped' || 'softStart' || 'boosting'
  */
-heatPumpRouter.get('/status', authorize, async (req, res) => {
+heatPumpRouter.get('/status', authorize, async (_req, res) => {
   const data = await HeatPumpService.getStatus();
   return res.json(data);
 });
@@ -61,7 +62,7 @@ heatPumpRouter.post('/start', authorize, async (req, res) => {
  * Returns the new status after stopping the heating.
  * @return {Object} status: 'stopped'
  */
-heatPumpRouter.post('/stop', authorize, async (req, res) => {
+heatPumpRouter.post('/stop', authorize, async (_req, res) => {
   await HeatPumpService.stopCircuitThree();
   const newStatus = await HeatPumpService.getStatus();
   return res.status(200).json(newStatus);
@@ -76,7 +77,7 @@ heatPumpRouter.post('/stop', authorize, async (req, res) => {
  */
 heatPumpRouter.get('/schedules/:variable', authorize, async (req, res) => {
   const { variable } = req.params;
-  if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
+  if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
     return res.json({
       error: 'Unknown variable',
     }).status(400).end();
@@ -94,13 +95,13 @@ heatPumpRouter.get('/schedules/:variable', authorize, async (req, res) => {
  */
 heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
   const { variable } = req.params;
-  if (variable !== 'heatDistCircuit3' && variable !== 'lowerTank') {
+  if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
     return res.status(400).json({
       error: 'Unknown variable',
     }).end();
   }
   const { schedule } = req.body;
-  await HeatPumpService.setSchedule({ variable, schedule });
+  await HeatPumpService.setSchedule(variable, schedule);
   return res.status(200).end();
 });
 
@@ -108,13 +109,13 @@ heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
  * Endpoint for fetching scheduling status and schedules for 'lowerTank' and 'heatDistCircuit3'.
  * @return {Object}
  * {
- *  scheduling: true || false,
+ *  scheduling: boolean
  *  lowerTank: { monday: { start: Number, end: Number, delta: Number }, ... },
  *  heatDistCircuit3: { monday: { start: Number, end: Number, delta: Number }, ... }
  * }
  */
-heatPumpRouter.get('/scheduling', authorize, async (req, res) => {
-  const data = await HeatPumpService.getScheduling();
+heatPumpRouter.get('/scheduling', authorize, async (_req, res) => {
+  const data = await HeatPumpService.getSchedulingEnabled();
   return res.json(data);
 });
 
@@ -124,7 +125,7 @@ heatPumpRouter.get('/scheduling', authorize, async (req, res) => {
  */
 heatPumpRouter.post('/scheduling', authorize, async (req, res) => {
   const { scheduling } = req.body;
-  const newStatus = await HeatPumpService.setScheduling(scheduling);
+  const newStatus = await HeatPumpService.setSchedulingEnabled(Boolean(scheduling));
   return res.status(200).json(newStatus);
 });
 

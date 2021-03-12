@@ -1,8 +1,8 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
+import * as express from 'express';
+import * as bcrypt from 'bcryptjs';
 import User from '../models/user';
 
-const authRouter = new express.Router();
+const authRouter = express.Router();
 
 /**
  * Endpoint for user login.
@@ -28,9 +28,8 @@ authRouter.post('/login', async (request, response) => {
     return response.status(401).json({ error: 'invalid username or password' });
   }
 
-  // Mutate session
-  request.session.loggedIn = true;
-  request.session.userId = user.id;
+  // Add user to the session property
+  request.session.user = user.id;
 
   return response
     .status(200)
@@ -56,12 +55,12 @@ authRouter.post('/logout', (request, response) => {
  * @return {Object} { username: String, name: String, id: String }
  */
 authRouter.get('/session', async (request, response) => {
-  if (request.session.loggedIn) {
-    const user = await User.findById(request.session.userId);
+  if (request.session.user) {
+    const userObject = await User.findById(request.session.user);
     return response.send({
-      id: user.id,
-      name: user.name,
-      username: user.username,
+      id: userObject.id,
+      name: userObject.name,
+      username: userObject.username,
     });
   }
   return response.status(401).json({ error: 'session invalid' });

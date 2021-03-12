@@ -1,15 +1,15 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cron from 'node-cron';
-import path from 'path';
+import * as express from 'express';
+import * as mongoose from 'mongoose';
+import * as cron from 'node-cron';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
-import session from 'express-session';
-import ConnectMongo from 'connect-mongo';
-import SharedSession from 'express-socket.io-session';
-import { Server } from 'socket.io';
+import * as session from 'express-session';
+import * as ConnectMongo from 'connect-mongo';
+import { Server, Socket } from 'socket.io';
+import * as SharedSession from 'express-socket.io-session';
 import { createServer } from 'http';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
+import * as cors from 'cors';
+import * as cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { errorHandler, unknownEndpoint } from './utils/middleware';
 import config from './utils/config';
@@ -24,7 +24,7 @@ import authRouter from './routes/auth';
 
 // Connect to MongoDB database
 mongoose
-  .connect(config.MONGODB_URI, {
+  .connect(config.MONGODB_URI as string, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -40,18 +40,24 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser(config.SESSIONS));
 
 // Store for sessions
-const MongoStore = new ConnectMongo(session);
+const MongoStore = ConnectMongo(session);
 const sessionStore = new MongoStore({
   mongooseConnection: connection,
   collection: 'sessions',
 });
 
+declare module 'express-session' {
+  export interface SessionData {
+    user: { [key: string]: never };
+  }
+}
+
 // Middleware for sessions
 const sessionMiddleware = session({
-  secret: config.SESSIONS,
+  secret: config.SESSIONS as string,
   resave: false,
   saveUninitialized: true,
   store: sessionStore,
@@ -67,10 +73,13 @@ app.use(sessionMiddleware);
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
+
 // eslint-disable-next-line no-underscore-dangle
-const __dirname = fileURLToPath(import.meta.url);
-app.use(express.static(path.join(__dirname, '../build')));
-app.get('*', (request, response) => {
+// const __dirname = fileURLToPath(import.meta.url);
+// TODO
+// app.use(express.static(path.join(__dirname, '../build')));
+app.use(express.static('./build'));
+app.get('*', (_request, response) => {
   response.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
@@ -85,30 +94,33 @@ The following contains logic for WebSocket communication via Socket.io.
 WebSockets allow server to send clients the queried heat-pump data in semi-real-time.
  */
 
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io: Server = new Server(httpServer, { cors: { origin: '*' } });
 // Use session authentication for WebSocket connection
-io.use(SharedSession(sessionMiddleware));
+io.use(SharedSession(sessionMiddleware, { autoSave: true }));
 
-let clients = [];
+// Types for handshakes and sessions
+
+let clients: Socket[] = [];
 
 io.on('connection', (socket) => {
   // Authorize client connection
   socket.on('login', async () => {
-    if (socket.handshake.session.loggedIn) {
+    if (socket.handshake.session.user) {
       clients.push(socket);
-      console.log(`New client ${socket.client.id} connected`);
-      const user = await User.findById(socket.handshake.session.userId);
+      console.log(`New client ${socket.id} connected`);
+      const userObject = await User.findById(socket.handshake.session.user);
       socket.emit('authenticated', {
-        id: user.id,
-        username: user.username,
-        name: user.name,
+        id: userObject.id,
+        username: userObject.username,
+        name: userObject.name,
       });
     }
   });
   // Remove client connection upon disconnect
   socket.on('disconnect', () => {
     clients = clients.filter(
-      (client) => client.handshake.session.userId !== socket.handshake.session.userId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (client) => (<any>client.client).id !== socket.client.id,
     );
     console.log(`Client ${socket.client.id} disconnected`);
   });

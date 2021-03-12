@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import * as mongoose from 'mongoose';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 
@@ -19,7 +19,6 @@ const heatPumpSchema = new mongoose.Schema({
   upperTankTemp: { type: Number },
   groundLoopTempInput: { type: Number },
   groundLoopTempOutput: { type: Number },
-  activeHeatDistCircuits: { type: Number },
   compressorRunning: { type: Boolean },
   compressorUsage: { type: Number },
   lowerTankLowerLimit: { type: Number },
@@ -34,13 +33,13 @@ const heatPumpSchema = new mongoose.Schema({
  * Changes the name of the id property (from _id to id).
  * Deletes unnecessary properties _id and __v (version) provided by MongoDB.
  */
-heatPumpSchema.set('toJSON', {
-  transform: (doc, obj) => {
-    obj.id = obj._id.toString(); // Rename id property
-    delete obj._id;
-    delete obj.__v; // Delete version property
-  },
-});
+// heatPumpSchema.set('toJSON', {
+//   transform: (doc, obj) => {
+//     obj.id = obj._id.toString(); // Rename id property
+//     delete obj._id;
+//     delete obj.__v; // Delete version property
+//   },
+// });
 
 const HeatPump = mongoose.model('HeatPump', heatPumpSchema);
 

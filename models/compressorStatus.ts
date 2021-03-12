@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import * as mongoose from 'mongoose';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 
@@ -16,13 +16,13 @@ const compressorSchema = new mongoose.Schema({
  * Changes the name of the id property (from _id to id).
  * Deletes unnecessary properties _id and __v (version) provided by MongoDB.
  */
-compressorSchema.set('toJSON', {
-  transform: (doc, obj) => {
-    obj.id = obj._id.toString(); // Rename id property
-    delete obj._id;
-    delete obj.__v; // Delete version property
-  },
-});
+// compressorSchema.set('toJSON', {
+//   transform: (doc: never, obj: { id: string; _id: { toString: () => string; }; __v: string; }) => {
+//     obj.id = obj._id.toString(); // Rename id property
+//     delete obj._id;
+//     delete obj.__v; // Delete version property
+//   },
+// });
 
 const CompressorStatus = mongoose.model('CompressorStatus', compressorSchema);
 

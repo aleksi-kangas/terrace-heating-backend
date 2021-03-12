@@ -1,7 +1,10 @@
-import moment from 'moment';
-import schedule from 'node-schedule';
+import * as moment from 'moment';
+import * as scheduler from 'node-schedule';
 import HeatPump from '../models/heatPump';
 import ModBusApi from './modbus/api';
+import {
+  HeatingStatus, HeatPumpEntry, ScheduleVariable, VariableHeatingSchedule,
+} from '../utils/types';
 
 let softStart = false;
 
@@ -15,7 +18,9 @@ let softStart = false;
  * @param {Object} date - with properties year, month, day
  * @return {Array<Object>} - contains heat pump data entries from the given date onwards (or all)
  */
-const getData = async (date) => {
+const getData = async (
+  date: { year: string, month: string, day: string },
+): Promise<HeatPumpEntry[]> => {
   // If any of the properties of date are missing, retrieve all entries of heat pump data.
   if (!date.year || !date.month || !date.day) {
     return HeatPump.find({});
@@ -39,17 +44,22 @@ const getData = async (date) => {
  * @param variable 'lowerTank' || 'heatDistCircuit3'
  * @return Object { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
  */
-const getSchedule = async (variable) => ModBusApi.querySchedule(variable);
+const getSchedule = async (
+  variable: ScheduleVariable,
+): Promise<VariableHeatingSchedule> => ModBusApi.querySchedule(variable);
 
 /**
  * Sets the boosting schedule of the given variable to the heat-pump.
- * @param variableSchedule Object containing schedule of either 'lowerTank' or 'heatDistCircuit3'
  * e.g. {
  * variable: 'lowerTank' || 'heatDistCircuit3',
  * schedule: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... }
  * }
+ * @param variable
+ * @param schedule
  */
-const setSchedule = async (variableSchedule) => ModBusApi.setSchedule(variableSchedule);
+const setSchedule = async (
+  variable: ScheduleVariable, schedule: VariableHeatingSchedule,
+): Promise<void> => ModBusApi.setSchedule(variable, schedule);
 
 /**
  * Retrieves the status of scheduling,
@@ -60,40 +70,34 @@ const setSchedule = async (variableSchedule) => ModBusApi.setSchedule(variableSc
  * heatDistCircuit3: { sunday: { start: Number, delta: Number, end: Number }, saturday: { ... }, ... },
  * }
  */
-
-const getScheduling = async () => {
-  const scheduling = await ModBusApi.querySchedulingStatus();
-  const lowerTank = await ModBusApi.querySchedule('lowerTank');
-  const heatDistCircuitThree = await ModBusApi.querySchedule('heatDistCircuit3');
-  return { scheduling, lowerTank, heatDistCircuit3: heatDistCircuitThree };
-};
+const getSchedulingEnabled = async (): Promise<boolean> => ModBusApi.querySchedulingStatus();
 
 /**
  * Retrieves the amount of active heat distribution circuits from the heat pump.
  * @return {Number} - the amount of active heat distribution circuits (usually 2 or 3)
  */
-const getStatus = async () => {
+const getStatus = async (): Promise<HeatingStatus> => {
   const circuits = await ModBusApi.queryActiveCircuits();
-  const schedulingActive = await getScheduling();
+  const schedulingEnabled = await getSchedulingEnabled();
   if (circuits === 3) {
     if (softStart) {
-      return { status: 'softStart' };
+      return HeatingStatus.SoftStart;
     }
-    if (!schedulingActive) {
-      return { status: 'running' };
+    if (!schedulingEnabled) {
+      return HeatingStatus.Running;
     }
-    const circuitThreeSchedule = await getSchedule('heatDistCircuit3');
+    const circuitThreeSchedule = await getSchedule(ScheduleVariable.HeatDistCircuit3);
     const now = new Date();
     const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const weekDay = weekDays[now.getDay()];
     const scheduleHours = circuitThreeSchedule[weekDay];
     if (Number(scheduleHours.start) < now.getHours() + 1
       && now.getHours() + 1 < Number(scheduleHours.end)) {
-      return { status: 'boosting' };
+      return HeatingStatus.Boosting;
     }
-    return { status: 'running' };
+    return HeatingStatus.Running;
   }
-  return { status: 'stopped' };
+  return HeatingStatus.Stopped;
 };
 
 /**
@@ -101,7 +105,7 @@ const getStatus = async () => {
  * It includes turning on circuit 3 and enabling boosting schedule.
  * @return {Promise<void>}
  */
-const startCircuitThree = async () => {
+const startCircuitThree = async (): Promise<void> => {
   await ModBusApi.startCircuitThree();
   await ModBusApi.enableScheduling();
 };
@@ -110,12 +114,12 @@ const startCircuitThree = async () => {
  * Soft-starts the heat distribution circuit 3 of the heat-pump.
  * Soft-starting means that circuit 3 is turned on and 12 hours later boosting schedule is enabled.
  */
-const softStartCircuitThree = async () => {
+const softStartCircuitThree = async (): Promise<void> => {
   softStart = true;
   const timeStamp = new Date();
   timeStamp.setHours(timeStamp.getHours() + 12);
   await ModBusApi.startCircuitThree();
-  schedule.scheduleJob(timeStamp, async () => {
+  scheduler.scheduleJob(timeStamp, async () => {
     softStart = false;
     await ModBusApi.enableScheduling();
   });
@@ -125,7 +129,7 @@ const softStartCircuitThree = async () => {
  * Stops the heat distribution circuit 3 of the heat-pump.
  * Includes disabling of the boosting schedule.
  */
-const stopCircuitThree = async () => {
+const stopCircuitThree = async (): Promise<void> => {
   await ModBusApi.disableScheduling();
   await ModBusApi.stopCircuitThree();
   softStart = false;
@@ -134,21 +138,18 @@ const stopCircuitThree = async () => {
 /**
  * Enables/disables boosting schedule for the heat-pump.
  * When active, 'lowerTank' and 'heatDistCircuit3' are boosted according to the set schedules.
- * @param schedulingEnable Boolean
+ * @param enableScheduling
  */
-const setScheduling = async (schedulingEnable) => {
-  if (schedulingEnable) {
+const setSchedulingEnabled = async (enableScheduling: boolean): Promise<HeatingStatus> => {
+  if (enableScheduling) {
     // Turning on scheduling
     softStart = false;
     await ModBusApi.enableScheduling();
-    return getStatus();
-  }
-  if (!schedulingEnable) {
+  } else {
     // Turning off scheduling
     await ModBusApi.disableScheduling();
-    return getStatus();
   }
-  return null;
+  return getStatus();
 };
 
 export default {
@@ -157,8 +158,8 @@ export default {
   getSchedule,
   setSchedule,
   startCircuitThree,
-  getScheduling,
-  setScheduling,
+  getSchedulingEnabled,
+  setSchedulingEnabled,
   softStartCircuitThree,
   stopCircuitThree,
 };

@@ -1,7 +1,8 @@
-import moment from 'moment';
+import * as moment from 'moment';
 import HeatPump from '../../models/heatPump';
 import CompressorStatus from '../../models/compressorStatus';
 import { signValue } from './helpers';
+import { HeatPumpEntry, TankLimits, VariableHeatingSchedule } from '../../utils/types';
 
 /**
  * Contains parsers for both mutating data received from heat-pump,
@@ -16,18 +17,21 @@ import { signValue } from './helpers';
  * @param compressorRunning Boolean
  * @param currentQueryTime time of the current query
  */
-export const parseCompressorUsage = async (compressorRunning, currentQueryTime) => {
+export const parseCompressorUsage = async (
+  compressorRunning: boolean, currentQueryTime: moment.Moment,
+): Promise<number | null> => {
   const latestHeatPumpEntry = await HeatPump.findOne({}, {}, { sort: { _id: -1 } });
   const lastStartEntry = await CompressorStatus.findOne({ type: 'start' }, {}, { sort: { _id: -1 } });
   const lastStopEntry = await CompressorStatus.findOne({ type: 'end' }, {}, { sort: { _id: -1 } });
 
   if (!latestHeatPumpEntry) {
+    // There are no heat-pump entries to compare to yet
     return null;
   }
 
   // Extract timestamps from previous start and stop entries
-  const startEntryTime = lastStartEntry ? moment(lastStartEntry.time) : null;
-  const stopEntryTime = lastStopEntry ? moment(lastStopEntry.time) : null;
+  // const startEntryTime = lastStartEntry ? moment(lastStartEntry.time) : null;
+  // const stopEntryTime = lastStopEntry ? moment(lastStopEntry.time) : null;
 
   let compressorUsage = null;
   let runningDuration;
@@ -40,6 +44,8 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
     Example: RRRRRRNNNN = 60 %
      */
     if (lastStartEntry && lastStopEntry) {
+      const startEntryTime = moment(lastStartEntry.time);
+      const stopEntryTime = moment(lastStopEntry.time);
       cycleDuration = moment.duration(currentQueryTime.diff(startEntryTime));
       runningDuration = moment.duration(stopEntryTime.diff(startEntryTime));
     }
@@ -58,6 +64,8 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
      */
     if (lastStartEntry && lastStopEntry) {
       // Calculate running duration and the whole cycle duration
+      const startEntryTime = moment(lastStartEntry.time);
+      const stopEntryTime = moment(lastStopEntry.time);
       runningDuration = moment.duration(currentQueryTime.diff(startEntryTime));
       cycleDuration = moment.duration(currentQueryTime.diff(stopEntryTime));
     }
@@ -90,8 +98,10 @@ export const parseCompressorUsage = async (compressorRunning, currentQueryTime) 
  * @return Object containing new limits
  */
 export const parseTankLimits = async (
-  lowerTankLowerLimit, lowerTankUpperLimit, upperTankLowerLimit, upperTankUpperLimit, timeStamp,
-) => {
+  lowerTankLowerLimit: number, lowerTankUpperLimit: number,
+  upperTankLowerLimit: number, upperTankUpperLimit: number,
+  timeStamp: moment.Moment,
+): Promise<TankLimits> => {
   const latestHeatPumpEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
 
   // Updating limits every ten minutes
@@ -105,10 +115,10 @@ export const parseTankLimits = async (
   }
 
   const result = {
-    lowerTankLowerLimit: null,
-    lowerTankUpperLimit: null,
-    upperTankLowerLimit: null,
-    upperTankUpperLimit: null,
+    lowerTankLowerLimit: latestHeatPumpEntry.lowerTankLowerLimit,
+    lowerTankUpperLimit: latestHeatPumpEntry.lowerTankUpperLimit,
+    upperTankLowerLimit: latestHeatPumpEntry.upperTankLowerLimit,
+    upperTankUpperLimit: latestHeatPumpEntry.upperTankUpperLimit,
   };
 
   // Limits have changed
@@ -135,7 +145,9 @@ export const parseTankLimits = async (
  * Parses and signs predetermined heat pump data from a ModBus query result.
  * @return {Object} - contains predetermined signed heat pump data
  */
-export const parseHeatPumpData = async (data, compressorStatus) => {
+export const parseHeatPumpData = async (
+  data: number[], compressorStatus: number,
+): Promise<HeatPumpEntry> => {
   const compressorRunning = compressorStatus === 1;
   const timeStamp = new Date();
   const compressorUsage = await parseCompressorUsage(compressorRunning, moment(timeStamp));
@@ -159,7 +171,9 @@ export const parseHeatPumpData = async (data, compressorStatus) => {
   });
 };
 
-export const parseLowerTankSchedule = (times, deltas) => ({
+export const parseLowerTankSchedule = (
+  times: number[], deltas: number[],
+): VariableHeatingSchedule => ({
   monday: {
     start: times[0],
     end: times[7],
@@ -197,7 +211,9 @@ export const parseLowerTankSchedule = (times, deltas) => ({
   },
 });
 
-export const parseCircuitThreeSchedule = (times, deltas) => ({
+export const parseCircuitThreeSchedule = (
+  times: number[], deltas: number[],
+): VariableHeatingSchedule => ({
   monday: {
     start: times[3],
     end: times[2],

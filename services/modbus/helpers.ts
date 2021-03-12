@@ -1,4 +1,4 @@
-import moment from 'moment';
+import * as moment from 'moment';
 import HeatPump from '../../models/heatPump';
 
 /**
@@ -6,7 +6,7 @@ import HeatPump from '../../models/heatPump';
  * @param value - number to be signed
  * @return {number} - the signed representation of the input value
  */
-export const signValue = (value) => {
+export const signValue = (value: number): number => {
   let signed = value;
   // Sign 16 bit values
   if (value > 65535 / 2) {
@@ -17,7 +17,7 @@ export const signValue = (value) => {
   return signed;
 };
 
-export const recordsCleanup = async () => {
+export const recordsCleanup = async (): Promise<void> => {
   const now = moment();
   const threshold = now.subtract(30, 'days');
   await HeatPump.deleteMany({ time: { $lt: threshold } });

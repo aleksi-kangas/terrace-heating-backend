@@ -1,7 +1,7 @@
-import express from 'express';
+import * as express from 'express';
 import userService from '../services/userService';
 
-const userRouter = new express.Router();
+const userRouter = express.Router();
 
 /**
  * Endpoint for fetching all users.

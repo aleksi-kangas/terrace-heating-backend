@@ -1,7 +1,10 @@
 import registers from './registers';
 import HeatPump from '../../models/heatPump';
 import client from './modBus';
-import { parseHeatPumpData, parseLowerTankSchedule, parseCircuitThreeSchedule } from './parsers';
+import { parseCircuitThreeSchedule, parseHeatPumpData, parseLowerTankSchedule } from './parsers';
+import {
+  HeatPumpEntry, RegisterAddresses, ScheduleVariable, VariableHeatingSchedule, Weekday,
+} from '../../utils/types';
 
 /**
  * Contains endpoints for interacting with the heat-pump via ModBus-protocol.
@@ -10,26 +13,28 @@ import { parseHeatPumpData, parseLowerTankSchedule, parseCircuitThreeSchedule } 
 /**
  * Sets the number of active heat distribution circuits to three, i.e. enables circuit three.
  */
-const startCircuitThree = async () => {
+const startCircuitThree = async (): Promise<void> => {
   await client.writeRegister(5100, 3);
 };
 
 /**
  * Sets the number of active heat distribution circuits to two, i.e. disables circuit three.
  */
-const stopCircuitThree = async () => {
+const stopCircuitThree = async (): Promise<void> => {
   await client.writeRegister(5100, 2);
 };
 
 /**
  * Writes true (enables) to the scheduling coil of the heat-pump.
  */
-const enableScheduling = async () => client.writeCoil(registers.schedulingActive, true);
+const enableScheduling = async (): Promise<void> => {
+  await client.writeCoil(registers.schedulingActive, true);
+};
 
 /**
  * Writes false (disables) to the scheduling coil of the heat-pump.
  */
-const disableScheduling = async () => {
+const disableScheduling = async (): Promise<void> => {
   await client.writeCoil(registers.schedulingActive, false);
 };
 
@@ -37,7 +42,7 @@ const disableScheduling = async () => {
  * Queries heat-pump for scheduling status, i.e. enabled/disabled.
  * @return Boolean
  */
-const querySchedulingStatus = async () => {
+const querySchedulingStatus = async (): Promise<boolean> => {
   const status = await client.readCoils(134, 1);
   return status.data[0];
 };
@@ -46,12 +51,13 @@ const querySchedulingStatus = async () => {
  * Queries predetermined registers from the heat pump and saves the queried data to MongoDB.
  * @return {Object} - contains saved data
  */
-const queryHeatPumpValues = async () => {
+const queryHeatPumpValues = async (): Promise<HeatPumpEntry> => {
   const values = await client.readHoldingRegisters(1, 120);
   const compressorStatus = await client.readHoldingRegisters(registers.compressorStatus, 1);
   const parsedData = await parseHeatPumpData(values.data, compressorStatus.data[0]);
   const heatPumpData = new HeatPump(parsedData);
-  return heatPumpData.save();
+  await heatPumpData.save();
+  return parsedData;
 };
 
 /**
@@ -59,7 +65,7 @@ const queryHeatPumpValues = async () => {
  * Reasonable return values are 2 and 3.
  * @return {Object} - number of active heat distribution circuits (usually 2 or 3)
  */
-const queryActiveCircuits = async () => {
+const queryActiveCircuits = async (): Promise<number> => {
   const activeCircuits = await client.readHoldingRegisters(5100, 1);
   return activeCircuits.data[0];
 };
@@ -70,35 +76,35 @@ const queryActiveCircuits = async () => {
  * @param variable String either 'lowerTank' or 'heatDistCircuit3'
  * @return Object { monday: { start: Number, end: Number, delta: Number }, ... }
  */
-const querySchedule = async (variable) => {
-  if (variable === 'lowerTank') {
+const querySchedule = async (
+  variable: ScheduleVariable,
+): Promise<VariableHeatingSchedule> => {
+  if (variable === ScheduleVariable.LowerTank) {
     const scheduleTimes = await client.readHoldingRegisters(5014, 14);
     const scheduleDeltas = await client.readHoldingRegisters(36, 8);
     return parseLowerTankSchedule(scheduleTimes.data, scheduleDeltas.data);
   }
-  if (variable === 'heatDistCircuit3') {
+  if (variable === ScheduleVariable.HeatDistCircuit3) {
     const scheduleTimes = await client.readHoldingRegisters(5211, 14);
     const scheduleDeltas = await client.readHoldingRegisters(106, 7);
     return parseCircuitThreeSchedule(scheduleTimes.data, scheduleDeltas.data);
   }
-  return null;
+  return null as never;
 };
 
 /**
  * Writes the schedule of the given variable to the heat-pump.
- * @param variableSchedule Object
- * {
- *  variable: 'lowerTank' || 'heatDistCircuit3',
- *  schedule: { sunday: { start: Number, end: Number, delta: Number }, ... }
- * }
+ * @param variable
+ * @param schedule
  */
-const setSchedule = async (variableSchedule) => {
-  const { variable, schedule } = variableSchedule;
-  let registerAddresses;
-  if (variable === 'lowerTank') registerAddresses = registers.lowerTank;
-  if (variable === 'heatDistCircuit3') registerAddresses = registers.heatDistCircuitThree;
+const setSchedule = async (
+  variable: ScheduleVariable, schedule: VariableHeatingSchedule,
+): Promise<void> => {
+  let registerAddresses: RegisterAddresses;
+  if (variable === ScheduleVariable.LowerTank) registerAddresses = registers.lowerTank;
+  if (variable === ScheduleVariable.HeatDistCircuit3) registerAddresses = registers.heatDistCircuitThree;
 
-  const weekDays = Object.keys(schedule);
+  const weekDays = Object.keys(Weekday);
   weekDays.forEach((weekDay) => {
     const startRegister = registerAddresses[weekDay].start;
     const endRegister = registerAddresses[weekDay].end;
@@ -107,7 +113,6 @@ const setSchedule = async (variableSchedule) => {
     client.writeRegister(endRegister, schedule[weekDay].end).then();
     client.writeRegister(deltaRegister, schedule[weekDay].delta).then();
   });
-  return null;
 };
 
 const ModBusApi = {
