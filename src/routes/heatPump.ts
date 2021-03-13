@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 import HeatPumpService from '../services/heatPumpService';
 import { authorize } from '../utils/middleware';
 import { ScheduleVariable } from '../utils/types';

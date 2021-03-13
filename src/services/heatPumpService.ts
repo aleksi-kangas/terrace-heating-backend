@@ -1,5 +1,5 @@
-import * as moment from 'moment';
-import * as scheduler from 'node-schedule';
+import moment from 'moment';
+import scheduler from 'node-schedule';
 import HeatPump from '../models/heatPump';
 import ModBusApi from './modbus/api';
 import {

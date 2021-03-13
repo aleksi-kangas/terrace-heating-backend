@@ -2,18 +2,18 @@
   "name": "terrace-heating-backend",
   "version": "0.0.1",
   "description": "Node Express backend for Terrace Heating Webapp",
-  "main": "app.ts",
+  "main": "src/app.ts",
   "scripts": {
-    "start": "cross-env NODE_ENV=production ts-node  app.ts",
-    "dev": "cross-env NODE_ENV=development ts-node-dev app.ts",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "start": "cross-env NODE_ENV=production ts-node src/app.ts",
+    "dev": "cross-env NODE_ENV=development ts-node-dev src/app.ts",
+    "build": "tsc",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
   },
   "repository": {
     "type": "git",
     "url": "\u0016https://github.com/aleksi-kangas/terrace-heating-backend"
   },
-  "type": "module",
   "author": "Aleksi Kangas",
   "license": "MIT",
   "dependencies": {
@@ -39,6 +39,7 @@
     "socket.io": "^3.1.0"
   },
   "devDependencies": {
+    "@k-foss/ts-esnode": "^2.0.2",
     "@types/bcryptjs": "^2.4.2",
     "@types/cookie-parser": "^1.4.2",
     "@types/express": "^4.17.11",

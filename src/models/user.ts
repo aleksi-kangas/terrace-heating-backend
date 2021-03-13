@@ -1,5 +1,5 @@
-import * as mongoose from 'mongoose';
-import * as uniqueValidator from 'mongoose-unique-validator';
+import mongoose from 'mongoose';
+import uniqueValidator from 'mongoose-unique-validator';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 

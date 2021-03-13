@@ -18,6 +18,7 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "@typescript-eslint/ban-ts-comment": "off",
         "import/extensions": "off",
         "max-len": ["error", { "code": 120 }],
         "no-shadow": "off",

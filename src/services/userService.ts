@@ -1,5 +1,5 @@
 import bcryptjs from 'bcryptjs';
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import User from '../models/user';
 
 type UserType = {
@@ -12,10 +12,7 @@ type UserType = {
  * Fetches all Users from MongoDB.
  * @return {Array<Object>} users
  */
-const getAll = async (): Promise<UserType[]> => {
-  const users = await User.find({});
-  return users.map((user) => user.toJSON());
-};
+const getAll = async (): Promise<UserType[]> => User.find({});
 
 /**
  * Used to create a new user and save it to the database.
@@ -27,7 +24,7 @@ const getAll = async (): Promise<UserType[]> => {
 const create = async (username: string, name: string, password: string): Promise<UserType> => {
   if (!password || password.length < 3) {
     // Throw validation error
-    const validationError = new mongoose.Error.ValidationError(this);
+    const validationError = new mongoose.Error.ValidationError('');
     validationError.errors.properties = new mongoose.Error.ValidatorError(
       'Password must be at least 3 characters long',
     );

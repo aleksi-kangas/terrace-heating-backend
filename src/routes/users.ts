@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 import userService from '../services/userService';
 
 const userRouter = express.Router();

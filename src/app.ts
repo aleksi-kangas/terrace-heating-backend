@@ -1,15 +1,14 @@
-import * as express from 'express';
-import * as mongoose from 'mongoose';
-import * as cron from 'node-cron';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import * as session from 'express-session';
-import * as ConnectMongo from 'connect-mongo';
+import express from 'express';
+import mongoose from 'mongoose';
+import cron from 'node-cron';
+import path from 'path';
+import session from 'express-session';
+import ConnectMongo from 'connect-mongo';
 import { Server, Socket } from 'socket.io';
-import * as SharedSession from 'express-socket.io-session';
+import SharedSession from 'express-socket.io-session';
 import { createServer } from 'http';
-import * as cors from 'cors';
-import * as cookieParser from 'cookie-parser';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { errorHandler, unknownEndpoint } from './utils/middleware';
 import config from './utils/config';
@@ -74,10 +73,7 @@ app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
 
-// eslint-disable-next-line no-underscore-dangle
-// const __dirname = fileURLToPath(import.meta.url);
-// TODO
-// app.use(express.static(path.join(__dirname, '../build')));
+// Server static files of the frontend
 app.use(express.static('./build'));
 app.get('*', (_request, response) => {
   response.sendFile(path.join(__dirname, '../build/index.html'));

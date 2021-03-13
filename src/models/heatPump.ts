@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 
@@ -12,9 +12,9 @@ const heatPumpSchema = new mongoose.Schema({
   outsideTemp: { type: Number },
   insideTemp: { type: Number },
   hotGasTemp: { type: Number },
-  heatDistCircuitTemp1: { type: Number },
-  heatDistCircuitTemp2: { type: Number },
-  heatDistCircuitTemp3: { type: Number },
+  heatDistCircuit1Temp: { type: Number },
+  heatDistCircuit2Temp: { type: Number },
+  heatDistCircuit3Temp: { type: Number },
   lowerTankTemp: { type: Number },
   upperTankTemp: { type: Number },
   groundLoopTempInput: { type: Number },

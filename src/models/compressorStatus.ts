@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 /* eslint-disable no-underscore-dangle,no-param-reassign */
 

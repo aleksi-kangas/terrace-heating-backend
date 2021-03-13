@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+import moment from 'moment';
 import HeatPump from '../../models/heatPump';
 import CompressorStatus from '../../models/compressorStatus';
 import { signValue } from './helpers';
@@ -157,14 +157,14 @@ export const parseHeatPumpData = async (
     time: timeStamp,
     outsideTemp: signValue(data[0]),
     hotGasTemp: signValue(data[1]),
-    heatDistCircuitTemp1: signValue(data[4]),
-    heatDistCircuitTemp2: signValue(data[5]),
+    heatDistCircuit1Temp: signValue(data[4]),
+    heatDistCircuit2Temp: signValue(data[5]),
     lowerTankTemp: signValue(data[16]),
     upperTankTemp: signValue(data[17]),
     insideTemp: signValue(data[73]),
     groundLoopTempOutput: signValue(data[97]),
     groundLoopTempInput: signValue(data[98]),
-    heatDistCircuitTemp3: signValue(data[116]),
+    heatDistCircuit3Temp: signValue(data[116]),
     compressorRunning,
     compressorUsage,
     ...limits,
