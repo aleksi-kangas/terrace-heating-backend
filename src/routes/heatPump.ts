@@ -119,11 +119,11 @@ heatPumpRouter.get('/scheduling', authorize, async (_request: Request, response:
  * Returns the new status of heating (HeatingStatus).
  * @return HeatingStatus
  */
-heatPumpRouter.post('/scheduling/:schedulingEnabled', authorize, async (request: Request, response: Response) => {
-  const { schedulingEnabled } = request.params;
-  if (!schedulingEnabled) {
-    return response.status(400).json({ error: 'Request parameter schedulingEnabled is missing' });
+heatPumpRouter.post('/scheduling/', authorize, async (request: Request, response: Response) => {
+  if (!('schedulingEnabled' in request.body)) {
+    return response.status(400).json({ error: 'Property schedulingEnabled is missing from the request body' });
   }
+  const { schedulingEnabled } = request.body;
   const newStatus = await HeatPumpService.setSchedulingEnabled(Boolean(schedulingEnabled));
   return response.status(200).json(newStatus);
 });
