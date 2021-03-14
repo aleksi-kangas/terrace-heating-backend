@@ -1,8 +1,13 @@
 {
   "name": "terrace-heating-backend",
-  "version": "0.0.1",
-  "description": "Node Express backend for Terrace Heating Webapp",
-  "main": "src/app.ts",
+  "version": "1.0.0",
+  "description": "An Express.js backend which enables monitoring and controlling of a terrace heating system",
+  "author": "Aleksi Kangas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aleksi-kangas/terrace-heating-backend"
+  },
   "scripts": {
     "start": "cross-env NODE_ENV=production ts-node src/app.ts",
     "dev": "cross-env NODE_ENV=development ts-node-dev src/app.ts",
@@ -10,12 +15,6 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "\u0016https://github.com/aleksi-kangas/terrace-heating-backend"
-  },
-  "author": "Aleksi Kangas",
-  "license": "MIT",
   "dependencies": {
     "@jest/globals": "^26.6.2",
     "bcryptjs": "^2.4.3",
