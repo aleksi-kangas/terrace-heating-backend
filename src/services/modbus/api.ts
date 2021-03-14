@@ -3,8 +3,8 @@ import HeatPump from '../../models/heatPump';
 import client from './modBus';
 import { parseCircuitThreeSchedule, parseHeatPumpData, parseLowerTankSchedule } from './parsers';
 import {
-  HeatPumpEntry, RegisterAddresses, ScheduleVariable, VariableHeatingSchedule, Weekday,
-} from '../../utils/types';
+  HeatPumpEntry, ScheduleVariable, VariableHeatingSchedule, WeekDays,
+} from '../../types';
 
 /**
  * Contains endpoints for interacting with the heat-pump via ModBus-protocol.
@@ -40,7 +40,7 @@ const disableScheduling = async (): Promise<void> => {
 
 /**
  * Queries heat-pump for scheduling status, i.e. enabled/disabled.
- * @return Boolean
+ * @return boolean
  */
 const querySchedulingStatus = async (): Promise<boolean> => {
   const status = await client.readCoils(134, 1);
@@ -49,7 +49,7 @@ const querySchedulingStatus = async (): Promise<boolean> => {
 
 /**
  * Queries predetermined registers from the heat pump and saves the queried data to MongoDB.
- * @return {Object} - contains saved data
+ * @return HeatPumpEntry queried heat-pump data
  */
 const queryHeatPumpValues = async (): Promise<HeatPumpEntry> => {
   const values = await client.readHoldingRegisters(1, 120);
@@ -63,7 +63,7 @@ const queryHeatPumpValues = async (): Promise<HeatPumpEntry> => {
 /**
  * Queries the number of active heat distribution circuits from the heat pump.
  * Reasonable return values are 2 and 3.
- * @return {Object} - number of active heat distribution circuits (usually 2 or 3)
+ * @return number active heat distribution circuits (usually 2 or 3)
  */
 const queryActiveCircuits = async (): Promise<number> => {
   const activeCircuits = await client.readHoldingRegisters(5100, 1);
@@ -71,10 +71,10 @@ const queryActiveCircuits = async (): Promise<number> => {
 };
 
 /**
- * Queries the boosting schedule of either 'lowerTank' or 'heatDistCircuit3' from the heat-pump.
- * Returns an object containing start hour, end hour and temperature delta for each weekday.
- * @param variable String either 'lowerTank' or 'heatDistCircuit3'
- * @return Object { monday: { start: Number, end: Number, delta: Number }, ... }
+ * Queries the boosting schedule of either 'lowerTank' or 'heatDistCircuit3' (ScheduleVariable) from the heat-pump.
+ * Returns a VariableHeatingSchedule-object which contains start and end hour and temperature delta for each weekday.
+ * @param variable ScheduleVariable.LowerTank || ScheduleVariable.HeatDistCircuit3
+ * @return VariableHeatingSchedule
  */
 const querySchedule = async (
   variable: ScheduleVariable,
@@ -89,23 +89,23 @@ const querySchedule = async (
     const scheduleDeltas = await client.readHoldingRegisters(106, 7);
     return parseCircuitThreeSchedule(scheduleTimes.data, scheduleDeltas.data);
   }
+  // Null is never returned
   return null as never;
 };
 
 /**
  * Writes the schedule of the given variable to the heat-pump.
- * @param variable
- * @param schedule
+ * @param variable ScheduleVariable.LowerTank || ScheduleVariable.HeatDistCircuit3
+ * @param schedule VariableHeatingSchedule
  */
 const setSchedule = async (
   variable: ScheduleVariable, schedule: VariableHeatingSchedule,
 ): Promise<void> => {
-  let registerAddresses: RegisterAddresses;
+  let registerAddresses: VariableHeatingSchedule;
   if (variable === ScheduleVariable.LowerTank) registerAddresses = registers.lowerTank;
   if (variable === ScheduleVariable.HeatDistCircuit3) registerAddresses = registers.heatDistCircuitThree;
 
-  const weekDays = Object.keys(Weekday);
-  weekDays.forEach((weekDay) => {
+  Object.values(WeekDays).forEach((weekDay: WeekDays) => {
     const startRegister = registerAddresses[weekDay].start;
     const endRegister = registerAddresses[weekDay].end;
     const deltaRegister = registerAddresses[weekDay].delta;

@@ -2,7 +2,7 @@ import moment from 'moment';
 import HeatPump from '../../models/heatPump';
 import CompressorStatus from '../../models/compressorStatus';
 import { signValue } from './helpers';
-import { HeatPumpEntry, TankLimits, VariableHeatingSchedule } from '../../utils/types';
+import { HeatPumpEntry, TankLimits, VariableHeatingSchedule } from '../../types';
 
 /**
  * Contains parsers for both mutating data received from heat-pump,
@@ -14,8 +14,8 @@ import { HeatPumpEntry, TankLimits, VariableHeatingSchedule } from '../../utils/
  * whether the current update is either a start point or end point for a compressor cycle.
  * Cycle definition is: running time -> not running time || not running time -> running time
  * Cycles overlap to produce more data points.
- * @param compressorRunning Boolean
- * @param currentQueryTime time of the current query
+ * @param compressorRunning is the compressor running (boolean)
+ * @param currentQueryTime time of the current query (Moment object)
  */
 export const parseCompressorUsage = async (
   compressorRunning: boolean, currentQueryTime: moment.Moment,
@@ -90,12 +90,12 @@ export const parseCompressorUsage = async (
  * Parser for lowerTank and upperTank limits.
  * Returns new limits every ten minutes or if any of the limits have changed.
  * Otherwise returned limits will be null.
- * @param lowerTankLowerLimit current value of lowerTankLowerLimit
- * @param lowerTankUpperLimit current value of lowerTankUpperLimit
- * @param upperTankLowerLimit current value of upperTankLowerLimit
- * @param upperTankUpperLimit current value of upperTankUpperLimit
- * @param timeStamp time of the current query
- * @return Object containing new limits
+ * @param lowerTankLowerLimit current value of lowerTankLowerLimit (number)
+ * @param lowerTankUpperLimit current value of lowerTankUpperLimit (number)
+ * @param upperTankLowerLimit current value of upperTankLowerLimit (number)
+ * @param upperTankUpperLimit current value of upperTankUpperLimit (number)
+ * @param timeStamp time of the current query (Moment object)
+ * @return TankLimits the new tank limits
  */
 export const parseTankLimits = async (
   lowerTankLowerLimit: number, lowerTankUpperLimit: number,
@@ -143,7 +143,7 @@ export const parseTankLimits = async (
 
 /**
  * Parses and signs predetermined heat pump data from a ModBus query result.
- * @return {Object} - contains predetermined signed heat pump data
+ * @return HeatPumpEntry parsed heat-pump data
  */
 export const parseHeatPumpData = async (
   data: number[], compressorStatus: number,
@@ -171,6 +171,12 @@ export const parseHeatPumpData = async (
   });
 };
 
+/**
+ * Parses lower tank schedule from the queried values.
+ * @param times number[]
+ * @param deltas number[]
+ * @return VariableHeatingSchedule
+ */
 export const parseLowerTankSchedule = (
   times: number[], deltas: number[],
 ): VariableHeatingSchedule => ({
@@ -211,6 +217,12 @@ export const parseLowerTankSchedule = (
   },
 });
 
+/**
+ * Parses heat distribution circuit three schedule from the queried values.
+ * @param times number[]
+ * @param deltas number[]
+ * @return VariableHeatingSchedule
+ */
 export const parseCircuitThreeSchedule = (
   times: number[], deltas: number[],
 ): VariableHeatingSchedule => ({

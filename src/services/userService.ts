@@ -1,16 +1,11 @@
 import bcryptjs from 'bcryptjs';
 import mongoose from 'mongoose';
 import User from '../models/user';
-
-type UserType = {
-  username: string,
-  name: string,
-  passwordHash: string,
-}
+import { UserType } from '../types';
 
 /**
  * Fetches all Users from MongoDB.
- * @return {Array<Object>} users
+ * @return UserType[] users
  */
 const getAll = async (): Promise<UserType[]> => User.find({});
 
@@ -19,7 +14,7 @@ const getAll = async (): Promise<UserType[]> => User.find({});
  * @param username string
  * @param name string
  * @param password string
- * @return {Promise<void|Promise|*>} saved user
+ * @return UserType created user
  */
 const create = async (username: string, name: string, password: string): Promise<UserType> => {
   if (!password || password.length < 3) {

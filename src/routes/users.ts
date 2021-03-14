@@ -1,22 +1,22 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import userService from '../services/userService';
 
 const userRouter = express.Router();
 
 /**
  * Endpoint for fetching all users.
- * @return {Array<Object>} users - containing all user objects present in the database
+ * @return UserType[] containing all user objects present in the database
  */
-userRouter.get('/', async (request, response) => {
+userRouter.get('/', async (request: Request, response: Response) => {
   const users = await userService.getAll();
   return response.json(users);
 });
 
 /**
  * Endpoint for creating a user.
- * @return {Object} user - user saved to the database
+ * @return UserType created user
  */
-userRouter.post('/', async (request, response) => {
+userRouter.post('/', async (request: Request, response: Response) => {
   const { username, name, password } = request.body;
   const user = userService.create(username, name, password);
   return response.json(user);

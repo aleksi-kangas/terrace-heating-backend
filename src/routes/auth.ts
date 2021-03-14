@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/user';
+import { Credentials } from '../types';
 
 const authRouter = express.Router();
 
@@ -8,10 +9,10 @@ const authRouter = express.Router();
  * Endpoint for user login.
  * Verifies the given credentials and registers the session.
  * Returns user information.
- * @return {Object} { username: String, name: String, id: String }
+ * @return UserType || null
  */
-authRouter.post('/login', async (request, response) => {
-  const credentials = {
+authRouter.post('/login', async (request: Request, response: Response) => {
+  const credentials: Credentials = {
     username: request.body.username,
     password: request.body.password,
   };
@@ -41,9 +42,9 @@ authRouter.post('/login', async (request, response) => {
 });
 
 /**
- * Endpoint for user logout. Deletes the session.
+ * Endpoint for user logout. Destroys the session.
  */
-authRouter.post('/logout', (request, response) => {
+authRouter.post('/logout', (request: Request, response: Response) => {
   request.session.destroy(() => {
     response.redirect('/');
   });
@@ -52,9 +53,9 @@ authRouter.post('/logout', (request, response) => {
 /**
  * Endpoint for fetching session status.
  * Returns user information if session (HTTP-only cookie) is valid.
- * @return {Object} { username: String, name: String, id: String }
+ * @return UserType
  */
-authRouter.get('/session', async (request, response) => {
+authRouter.get('/session', async (request: Request, response: Response) => {
   if (request.session.user) {
     const userObject = await User.findById(request.session.user);
     return response.send({
@@ -63,7 +64,7 @@ authRouter.get('/session', async (request, response) => {
       username: userObject.username,
     });
   }
-  return response.status(401).json({ error: 'session invalid' });
+  return response.status(401).json({ error: 'Session is invalid' });
 });
 
 export default authRouter;

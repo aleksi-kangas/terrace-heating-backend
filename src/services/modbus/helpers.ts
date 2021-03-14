@@ -3,8 +3,8 @@ import HeatPump from '../../models/heatPump';
 
 /**
  * Helper function for signing an unsigned 16 bit number.
- * @param value - number to be signed
- * @return {number} - the signed representation of the input value
+ * @param value to be signed
+ * @return signed number
  */
 export const signValue = (value: number): number => {
   let signed = value;
@@ -17,6 +17,10 @@ export const signValue = (value: number): number => {
   return signed;
 };
 
+/**
+ * Helper function for cleaning up the database of old entries.
+ * Old entries are defined to be entries which exceed the age of 30 days.
+ */
 export const recordsCleanup = async (): Promise<void> => {
   const now = moment();
   const threshold = now.subtract(30, 'days');

@@ -3,8 +3,8 @@ import scheduler from 'node-schedule';
 import HeatPump from '../models/heatPump';
 import ModBusApi from './modbus/api';
 import {
-  HeatingStatus, HeatPumpEntry, ScheduleVariable, VariableHeatingSchedule,
-} from '../utils/types';
+  HeatingStatus, HeatPumpEntry, ScheduleVariable, VariableHeatingSchedule, WeekDays,
+} from '../types';
 
 let softStart = false;
 
@@ -88,8 +88,7 @@ const getStatus = async (): Promise<HeatingStatus> => {
     }
     const circuitThreeSchedule = await getSchedule(ScheduleVariable.HeatDistCircuit3);
     const now = new Date();
-    const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const weekDay = weekDays[now.getDay()];
+    const weekDay = Object.values(WeekDays)[moment().isoWeekday() - 1];
     const scheduleHours = circuitThreeSchedule[weekDay];
     if (Number(scheduleHours.start) < now.getHours() + 1
       && now.getHours() + 1 < Number(scheduleHours.end)) {
@@ -138,7 +137,7 @@ const stopCircuitThree = async (): Promise<void> => {
 /**
  * Enables/disables boosting schedule for the heat-pump.
  * When active, 'lowerTank' and 'heatDistCircuit3' are boosted according to the set schedules.
- * @param enableScheduling
+ * @param enableScheduling boolean
  */
 const setSchedulingEnabled = async (enableScheduling: boolean): Promise<HeatingStatus> => {
   if (enableScheduling) {

@@ -1,37 +1,35 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import HeatPumpService from '../services/heatPumpService';
 import { authorize } from '../utils/middleware';
-import { ScheduleVariable } from '../utils/types';
+import { ScheduleVariable } from '../types';
 
 const heatPumpRouter = express.Router();
 
 /**
  * Endpoint for fetching heat pump data.
- *
  * Optional query strings year, month and day determine a date,
  * that is used for filtering and including heat pump data entries from that date onwards.
- *
- * @return {Array.<Object>} - contains heat pump data from the given date onwards
+ * @return HeatPumpEntry[]
  */
-heatPumpRouter.get('/', authorize, async (req, res) => {
+heatPumpRouter.get('/', authorize, async (request: Request, response: Response) => {
   // Optional query strings
   const date = {
-    year: String(req.query.year),
-    month: String(req.query.month),
-    day: String(req.query.day),
+    year: String(request.query.year),
+    month: String(request.query.month),
+    day: String(request.query.day),
   };
-  const data = await HeatPumpService.getData(date);
-  return res.json(data);
+  const heatPumpData = await HeatPumpService.getData(date);
+  return response.json(heatPumpData);
 });
 
 /**
  * Endpoint for fetching status of the heating system.
- * Status is one of 'running', 'stopped', 'softStart' or 'boosting'.
- * @return {Object} status: 'running' || 'stopped' || 'softStart' || 'boosting'
+ * Heating status is one of 'BOOSTING', 'RUNNING', 'SOFT_START' or 'STOPPED' (HeatingStatus).
+ * @return HeatingStatus.Boosting || HeatingStatus.Running || HeatingStatus.SoftStart || HeatingStatus.Stopped
  */
-heatPumpRouter.get('/status', authorize, async (_req, res) => {
-  const data = await HeatPumpService.getStatus();
-  return res.json(data);
+heatPumpRouter.get('/status', authorize, async (_request: Request, response: Response) => {
+  const heatingStatus = await HeatPumpService.getStatus();
+  return response.json(heatingStatus);
 });
 
 /**
@@ -40,93 +38,94 @@ heatPumpRouter.get('/status', authorize, async (_req, res) => {
  * Soft-start means that heat distribution circuit is switched on immediately,
  * and 12 hours later boosting schedule is enabled.
  * Returns the new status after the startup.
- * @return {Object} status: 'running' || 'softStart' || 'boosting'
+ * @return HeatingStatus.Boosting || HeatingStatus.Running || HeatingStatus.SoftStart
  */
-heatPumpRouter.post('/start', authorize, async (req, res) => {
-  const { softStart } = req.body;
-  let newStatus;
+heatPumpRouter.post('/start', authorize, async (request: Request, response: Response) => {
+  const { softStart } = request.body;
+  let heatingStatus;
 
   if (softStart) {
     await HeatPumpService.softStartCircuitThree();
-    newStatus = await HeatPumpService.getStatus();
+    heatingStatus = await HeatPumpService.getStatus();
   } else {
     await HeatPumpService.startCircuitThree();
-    newStatus = await HeatPumpService.getStatus();
+    heatingStatus = await HeatPumpService.getStatus();
   }
-  return res.status(200).json(newStatus);
+  return response.status(200).json(heatingStatus);
 });
 
 /**
  * Endpoint for stopping the heating system.
  * Heat distribution circuit three and boosting schedules are turned off.
  * Returns the new status after stopping the heating.
- * @return {Object} status: 'stopped'
+ * @return HeatingStatus.Stopped
  */
-heatPumpRouter.post('/stop', authorize, async (_req, res) => {
+heatPumpRouter.post('/stop', authorize, async (_request: Request, response: Response) => {
   await HeatPumpService.stopCircuitThree();
-  const newStatus = await HeatPumpService.getStatus();
-  return res.status(200).json(newStatus);
+  const heatingStatus = await HeatPumpService.getStatus();
+  return response.status(200).json(heatingStatus);
 });
 
 /**
  * Endpoint for fetching a boosting schedule of a variable.
- * Allowed variables are 'lowerTank' and 'heatDistCircuit3'.
- * Returns the boosting schedule of the variable,
+ * Allowed variables are
+ * ScheduleVariable.LowerTank ('lowerTank') and ScheduleVariable.HeatDistCircuit3 ('heatDistCircuit3').
+ * Returns the heating schedule of the variable (VariableHeatingSchedule),
  * containing start hour, end hour and temperature delta for each weekday.
- * @return {Object} { monday: { start: Number, end: Number, delta: Number }, ... }
+ * @return VariableHeatingSchedule
  */
-heatPumpRouter.get('/schedules/:variable', authorize, async (req, res) => {
-  const { variable } = req.params;
+heatPumpRouter.get('/schedules/:variable', authorize, async (request: Request, response: Response) => {
+  const { variable } = request.params;
   if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
-    return res.json({
+    return response.json({
       error: 'Unknown variable',
     }).status(400).end();
   }
-  const data = await HeatPumpService.getSchedule(variable);
-  return res.json(data);
+  const heatingSchedule = await HeatPumpService.getSchedule(variable);
+  return response.json(heatingSchedule);
 });
 
 /**
  * Endpoint for setting a boosting schedule of a variable.
- * Allowed variables are 'lowerTank' and 'heatDistCircuit3'.
- * Requires the boosting schedule of the variable,
+ * Allowed variables are
+ * ScheduleVariable.LowerTank ('lowerTank') and ScheduleVariable.HeatDistCircuit3 ('heatDistCircuit3').
+ * Requires the heating schedule of the variable (VariableHeatingSchedule),
  * containing start hour, end hour and temperature delta for each weekday.
- * e.g. { monday: { start: Number, end: Number, delta: Number }, ... }
  */
-heatPumpRouter.post('/schedules/:variable', authorize, async (req, res) => {
-  const { variable } = req.params;
+heatPumpRouter.post('/schedules/:variable', authorize, async (request: Request, response: Response) => {
+  const { variable } = request.params;
   if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
-    return res.status(400).json({
+    return response.status(400).json({
       error: 'Unknown variable',
     }).end();
   }
-  const { schedule } = req.body;
+  const { schedule } = request.body;
   await HeatPumpService.setSchedule(variable, schedule);
-  return res.status(200).end();
+  return response.status(200).end();
 });
 
 /**
- * Endpoint for fetching scheduling status and schedules for 'lowerTank' and 'heatDistCircuit3'.
- * @return {Object}
- * {
- *  scheduling: boolean
- *  lowerTank: { monday: { start: Number, end: Number, delta: Number }, ... },
- *  heatDistCircuit3: { monday: { start: Number, end: Number, delta: Number }, ... }
- * }
+ * Endpoint for fetching scheduling status, i.e. is it enabled or disabled.
+ * @return boolean
  */
-heatPumpRouter.get('/scheduling', authorize, async (_req, res) => {
+heatPumpRouter.get('/scheduling', authorize, async (_request: Request, response: Response) => {
   const data = await HeatPumpService.getSchedulingEnabled();
-  return res.json(data);
+  return response.json(data);
 });
 
 /**
- * Endpoint for enabling/disabling scheduling.
- * Requires an Object { scheduling: true || false }.
+ * Endpoint for enabling or disabling scheduling of heating.
+ * Requires a request parameter schedulingEnabled which is a string representing a boolean value.
+ * Returns the new status of heating (HeatingStatus).
+ * @return HeatingStatus
  */
-heatPumpRouter.post('/scheduling', authorize, async (req, res) => {
-  const { scheduling } = req.body;
-  const newStatus = await HeatPumpService.setSchedulingEnabled(Boolean(scheduling));
-  return res.status(200).json(newStatus);
+heatPumpRouter.post('/scheduling/:schedulingEnabled', authorize, async (request: Request, response: Response) => {
+  const { schedulingEnabled } = request.params;
+  if (!schedulingEnabled) {
+    return response.status(400).json({ error: 'Request parameter schedulingEnabled is missing' });
+  }
+  const newStatus = await HeatPumpService.setSchedulingEnabled(Boolean(schedulingEnabled));
+  return response.status(200).json(newStatus);
 });
 
 export default heatPumpRouter;

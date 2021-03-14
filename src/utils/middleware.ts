@@ -2,7 +2,7 @@ import {
   Request, Response, NextFunction,
 } from 'express';
 
-interface Error {
+type Error = {
   name?: string;
   message: string;
 }
