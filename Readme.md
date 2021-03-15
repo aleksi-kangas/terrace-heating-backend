@@ -31,26 +31,27 @@ The features of the Express.js backend include:
 ## Implementation
 - Communication with the heat-pump is established with ModBus TCP protocol using [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) library.
 
-```JavaScript
+```TypeScript
 // Connect to the heat pump via ModBus-protocol
 const client = new ModBus();
-client.connectTCP(config.MODBUS_HOST, { port: config.MODBUS_PORT }).then();
+client.connectTCP(config.MODBUS_HOST as string, { port: Number(config.MODBUS_PORT) }).then();
 ```
 
 - Querying values only each minute to avoid stressing the internal controller of the heat-pump unnecessarily.
     - After each query of the heat-pump, the latest values are transmitted to clients with [Socket.io](https://github.com/socketio/socket.io).
     - A WebSocket connection is used to reduce unnecessary HTTP polling by the frontend.
 
-```JavaScript
+```TypeScript
 /**
  * Cronjob for querying heat-pump values each minute.
  * Queried values are saved to the database and sent to connected clients via WebSocket connection.
  */
 cron.schedule('* * * * *', async () => {
   try {
-    const queriedData = await ModBusService.queryHeatPumpValues();
-    clients.forEach((client) => client.emit('heatPumpData', queriedData));
+    const queriedData = await ModBusApi.queryHeatPumpValues();
+    clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
+    await recordsCleanup();
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
   }
@@ -60,24 +61,22 @@ cron.schedule('* * * * *', async () => {
 - A Simplified REST API requires user authentication and provides endpoints for fetching data and controlling the heat-pump.
     - Example:
 
-```JavaScript
+```TypeScript
 /**
  * Endpoint for fetching heat pump data.
- *
  * Optional query strings year, month and day determine a date,
  * that is used for filtering and including heat pump data entries from that date onwards.
- *
- * @return {Array.<Object>} - contains heat pump data from the given date onwards
+ * @return HeatPumpEntry[]
  */
-heatPumpRouter.get('/', authorize, async (req, res) => {
+heatPumpRouter.get('/', authorize, async (request: Request, response: Response) => {
   // Optional query strings
   const date = {
-    year: req.query.year,
-    month: req.query.month,
-    day: req.query.day,
+    year: String(request.query.year),
+    month: String(request.query.month),
+    day: String(request.query.day),
   };
-  const data = await HeatPumpService.getData(date);
-  return res.json(data);
+  const heatPumpData = await HeatPumpService.getData(date);
+  return response.json(heatPumpData);
 });
 ```
 
@@ -85,11 +84,11 @@ heatPumpRouter.get('/', authorize, async (req, res) => {
   - The most important register is the one which controls the amount of active heat distribution circuits.
   - Example:
 
-```JavaScript
+```TypeScript
 /**
  * Sets the number of active heat distribution circuits to three, i.e. enables circuit three.
  */
-const startCircuitThree = async () => {
+const startCircuitThree = async (): Promise<void> => {
   await client.writeRegister(5100, 3);
 };
 ```
