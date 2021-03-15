@@ -1,13 +1,12 @@
 import bcryptjs from 'bcryptjs';
 import mongoose from 'mongoose';
-import User from '../models/user';
-import { UserType } from '../types';
+import User, { UserDocument } from '../models/user';
 
 /**
  * Fetches all Users from MongoDB.
  * @return UserType[] users
  */
-const getAll = async (): Promise<UserType[]> => User.find({});
+const getAll = async (): Promise<UserDocument[]> => User.find({});
 
 /**
  * Used to create a new user and save it to the database.
@@ -16,7 +15,7 @@ const getAll = async (): Promise<UserType[]> => User.find({});
  * @param password string
  * @return UserType created user
  */
-const create = async (username: string, name: string, password: string): Promise<UserType> => {
+const create = async (username: string, name: string, password: string): Promise<UserDocument> => {
   if (!password || password.length < 3) {
     // Throw validation error
     const validationError = new mongoose.Error.ValidationError('');
@@ -26,15 +25,12 @@ const create = async (username: string, name: string, password: string): Promise
     throw validationError;
   }
   const passwordHash = await bcryptjs.hash(password, 10);
-  const user = new User({
+  const user: UserDocument = new User({
     username,
     name,
     passwordHash,
   });
-  await user.save();
-  return {
-    username, name, passwordHash,
-  };
+  return user.save();
 };
 
 export default {

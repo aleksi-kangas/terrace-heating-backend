@@ -149,9 +149,9 @@ export const parseHeatPumpData = async (
   data: number[], compressorStatus: number,
 ): Promise<HeatPumpEntry> => {
   const compressorRunning = compressorStatus === 1;
-  const timeStamp = new Date();
-  const compressorUsage = await parseCompressorUsage(compressorRunning, moment(timeStamp));
-  const limits = await parseTankLimits(data[74], data[75], data[78], data[79], moment(timeStamp));
+  const timeStamp = moment();
+  const compressorUsage = await parseCompressorUsage(compressorRunning, timeStamp);
+  const limits = await parseTankLimits(data[74], data[75], data[78], data[79], timeStamp);
 
   return ({
     time: timeStamp,

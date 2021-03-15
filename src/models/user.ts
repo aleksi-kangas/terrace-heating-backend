@@ -1,7 +1,11 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 import uniqueValidator from 'mongoose-unique-validator';
 
-/* eslint-disable no-underscore-dangle,no-param-reassign */
+export interface UserDocument extends Document {
+  username: string,
+  name?: string,
+  passwordHash: string
+}
 
 /**
  * Mongoose Schema for user.
@@ -10,7 +14,7 @@ import uniqueValidator from 'mongoose-unique-validator';
  * @property name - user's name
  * @property passwordHash - hashed password by bcryptjs-library
  */
-const userSchema = new mongoose.Schema({
+const userSchema: Schema = new Schema({
   username: {
     type: String,
     minlength: 3,
@@ -44,6 +48,6 @@ userSchema.plugin(uniqueValidator);
 //   },
 // });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model<UserDocument>('User', userSchema);
 
 export default User;

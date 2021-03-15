@@ -1,11 +1,15 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import moment from 'moment';
 
-/* eslint-disable no-underscore-dangle,no-param-reassign */
+export interface CompressorStatusDocument extends Document {
+  time: moment.Moment,
+  type: string,
+}
 
 /**
  * Mongoose Schema for compressor start and stop timestamps.
  */
-const compressorSchema = new mongoose.Schema({
+const compressorSchema: Schema = new Schema({
   time: { type: Date, required: true },
   type: { type: String, required: true },
 });
@@ -24,6 +28,6 @@ const compressorSchema = new mongoose.Schema({
 //   },
 // });
 
-const CompressorStatus = mongoose.model('CompressorStatus', compressorSchema);
+const CompressorStatus = mongoose.model<CompressorStatusDocument>('CompressorStatus', compressorSchema);
 
 export default CompressorStatus;

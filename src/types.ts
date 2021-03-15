@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 /**
  * Heat-pump related enums and types.
  */
@@ -17,7 +19,7 @@ export type TankLimits = {
 }
 
 export type HeatPumpEntry = {
-  time: Date,
+  time: moment.Moment,
   outsideTemp: number,
   insideTemp: number,
   hotGasTemp: number,

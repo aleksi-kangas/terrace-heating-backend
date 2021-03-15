@@ -59,9 +59,9 @@ authRouter.get('/session', async (request: Request, response: Response) => {
   if (request.session.user) {
     const userObject = await User.findById(request.session.user);
     return response.send({
-      id: userObject.id,
-      name: userObject.name,
-      username: userObject.username,
+      id: userObject?.id,
+      name: userObject?.name,
+      username: userObject?.username,
     });
   }
   return response.status(401).json({ error: 'Session is invalid' });

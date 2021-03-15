@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import userService from '../services/userService';
+import { UserDocument } from '../models/user';
 
 const userRouter = express.Router();
 
@@ -8,7 +9,7 @@ const userRouter = express.Router();
  * @return UserType[] containing all user objects present in the database
  */
 userRouter.get('/', async (request: Request, response: Response) => {
-  const users = await userService.getAll();
+  const users: UserDocument[] = await userService.getAll();
   return response.json(users);
 });
 

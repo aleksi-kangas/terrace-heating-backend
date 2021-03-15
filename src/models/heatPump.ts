@@ -1,30 +1,48 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import moment from 'moment';
 
-/* eslint-disable no-underscore-dangle,no-param-reassign */
-
+export interface HeatPumpEntryDocument extends Document {
+  time: moment.Moment,
+  outsideTemp: number,
+  insideTemp: number,
+  hotGasTemp: number,
+  heatDistCircuit1Temp: number,
+  heatDistCircuit2Temp: number,
+  heatDistCircuit3Temp: number,
+  lowerTankTemp: number,
+  upperTankTemp: number,
+  groundLoopTempInput: number,
+  groundLoopTempOutput: number,
+  compressorRunning: boolean,
+  compressorUsage: number | null,
+  lowerTankLowerLimit: number,
+  lowerTankUpperLimit: number,
+  upperTankLowerLimit: number,
+  upperTankUpperLimit: number,
+}
 /**
  * Mongoose Schema for heat pump data.
  *
  * Contains predetermined fields for storing heat pump data gathered with ModBus.
  */
-const heatPumpSchema = new mongoose.Schema({
+const heatPumpSchema: Schema = new Schema({
   time: { type: Date, required: true },
-  outsideTemp: { type: Number },
-  insideTemp: { type: Number },
-  hotGasTemp: { type: Number },
-  heatDistCircuit1Temp: { type: Number },
-  heatDistCircuit2Temp: { type: Number },
-  heatDistCircuit3Temp: { type: Number },
-  lowerTankTemp: { type: Number },
-  upperTankTemp: { type: Number },
-  groundLoopTempInput: { type: Number },
-  groundLoopTempOutput: { type: Number },
-  compressorRunning: { type: Boolean },
-  compressorUsage: { type: Number },
-  lowerTankLowerLimit: { type: Number },
-  lowerTankUpperLimit: { type: Number },
-  upperTankLowerLimit: { type: Number },
-  upperTankUpperLimit: { type: Number },
+  outsideTemp: Number,
+  insideTemp: Number,
+  hotGasTemp: Number,
+  heatDistCircuit1Temp: Number,
+  heatDistCircuit2Temp: Number,
+  heatDistCircuit3Temp: Number,
+  lowerTankTemp: Number,
+  upperTankTemp: Number,
+  groundLoopTempInput: Number,
+  groundLoopTempOutput: Number,
+  compressorRunning: Number,
+  compressorUsage: Boolean,
+  lowerTankLowerLimit: Number,
+  lowerTankUpperLimit: Number,
+  upperTankLowerLimit: Number,
+  upperTankUpperLimit: Number,
 });
 
 /**
@@ -41,6 +59,6 @@ const heatPumpSchema = new mongoose.Schema({
 //   },
 // });
 
-const HeatPump = mongoose.model('HeatPump', heatPumpSchema);
+const HeatPump = mongoose.model<HeatPumpEntryDocument>('HeatPump', heatPumpSchema);
 
 export default HeatPump;

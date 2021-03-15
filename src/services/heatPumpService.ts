@@ -1,9 +1,9 @@
 import moment from 'moment';
 import scheduler from 'node-schedule';
-import HeatPump from '../models/heatPump';
+import HeatPump, { HeatPumpEntryDocument } from '../models/heatPump';
 import ModBusApi from './modbus/api';
 import {
-  HeatingStatus, HeatPumpEntry, ScheduleVariable, VariableHeatingSchedule, WeekDays,
+  HeatingStatus, ScheduleVariable, VariableHeatingSchedule, WeekDays,
 } from '../types';
 
 let softStart = false;
@@ -20,7 +20,7 @@ let softStart = false;
  */
 const getData = async (
   date: { year: string, month: string, day: string },
-): Promise<HeatPumpEntry[]> => {
+): Promise<HeatPumpEntryDocument[]> => {
   // If any of the properties of date are missing, retrieve all entries of heat pump data.
   if (!date.year || !date.month || !date.day) {
     return HeatPump.find({});
@@ -35,7 +35,7 @@ const getData = async (
 
   // If year, month and day properties are present and form a valid date,
   // retrieve entries of heat pump data from that date onwards.
-  const dateLimit = moment(`${date.year}-${date.month}-${date.day}`).format('YYYY-MM-DD');
+  const dateLimit = moment(`${date.year}-${date.month}-${date.day}`);
   return HeatPump.find({ time: { $gt: dateLimit } });
 };
 

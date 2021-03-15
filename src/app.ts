@@ -1,14 +1,13 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cron from 'node-cron';
 import path from 'path';
-import session from 'express-session';
-import ConnectMongo from 'connect-mongo';
+import session, { Session, SessionData } from 'express-session';
+import MongoStore from 'connect-mongo';
 import { Server, Socket } from 'socket.io';
 import SharedSession from 'express-socket.io-session';
 import { createServer } from 'http';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { errorHandler, unknownEndpoint } from './utils/middleware';
 import config from './utils/config';
@@ -30,7 +29,6 @@ mongoose
   .catch((error) => {
     console.error(error.message);
   });
-const { connection } = mongoose;
 
 const app = express();
 
@@ -39,31 +37,21 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(cookieParser(config.SESSIONS));
-
-// Store for sessions
-const MongoStore = ConnectMongo(session);
-const sessionStore = new MongoStore({
-  mongooseConnection: connection,
-  collection: 'sessions',
-});
-
-declare module 'express-session' {
-  export interface SessionData {
-    user: { [key: string]: never };
-  }
-}
 
 // Middleware for sessions
 const sessionMiddleware = session({
   secret: config.SESSIONS as string,
   resave: false,
-  saveUninitialized: true,
-  store: sessionStore,
+  saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60,
     httpOnly: true,
   },
+  store: MongoStore.create({
+    mongoUrl: config.MONGODB_URI,
+    dbName: 'sessions',
+    stringify: false,
+  }),
 });
 
 app.use(sessionMiddleware);
@@ -75,7 +63,7 @@ app.use('/api/auth', authRouter);
 
 // Server static files of the frontend
 app.use(express.static('./build'));
-app.get('*', (_request, response) => {
+app.get('*', (_request: Request, response: Response) => {
   response.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
@@ -95,30 +83,44 @@ const io: Server = new Server(httpServer, { cors: { origin: '*' } });
 io.use(SharedSession(sessionMiddleware, { autoSave: true }));
 
 // Types for handshakes and sessions
+declare module 'express-session' {
+  export interface SessionData {
+    user: { [key: string]: never };
+  }
+}
+
+declare module 'socket.io/dist/socket' {
+  export interface Handshake {
+    session?: Session & Partial<SessionData>,
+  }
+}
 
 let clients: Socket[] = [];
 
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
   // Authorize client connection
   socket.on('login', async () => {
-    if (socket.handshake.session.user) {
+    if (socket.handshake.session?.user) {
       clients.push(socket);
       console.log(`New client ${socket.id} connected`);
       const userObject = await User.findById(socket.handshake.session.user);
       socket.emit('authenticated', {
-        id: userObject.id,
-        username: userObject.username,
-        name: userObject.name,
+        id: userObject?.id,
+        username: userObject?.username,
+        name: userObject?.name,
       });
     }
   });
   // Remove client connection upon disconnect
   socket.on('disconnect', () => {
     clients = clients.filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (client) => (<any>client.client).id !== socket.client.id,
+      // Using bracket notation to access private property of client
+      // Other option woule be (<any>client.client).id but that's not type safe
+      // eslint-disable-next-line dot-notation
+      (client: Socket) => client.client['id'] !== socket.client['id'],
     );
-    console.log(`Client ${socket.client.id} disconnected`);
+    // eslint-disable-next-line dot-notation
+    console.log(`Client ${socket.client['id']} disconnected`);
   });
 });
 
@@ -129,7 +131,7 @@ io.on('connection', (socket) => {
 cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusApi.queryHeatPumpValues();
-    clients.forEach((client) => client.emit('heatPumpData', queriedData));
+    clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
     await recordsCleanup();
   } catch (exception) {
