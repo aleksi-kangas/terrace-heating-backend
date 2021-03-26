@@ -45,20 +45,6 @@ const heatPumpSchema: Schema = new Schema({
   upperTankUpperLimit: Number,
 });
 
-/**
- * Custom toJSON function to transform objects of the schema.
- *
- * Changes the name of the id property (from _id to id).
- * Deletes unnecessary properties _id and __v (version) provided by MongoDB.
- */
-// heatPumpSchema.set('toJSON', {
-//   transform: (doc, obj) => {
-//     obj.id = obj._id.toString(); // Rename id property
-//     delete obj._id;
-//     delete obj.__v; // Delete version property
-//   },
-// });
-
 const HeatPump = mongoose.model<HeatPumpEntryDocument>('HeatPump', heatPumpSchema);
 
 export default HeatPump;
