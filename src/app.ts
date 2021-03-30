@@ -20,6 +20,8 @@ import heatPumpRouter from './routes/heatPump';
 import authRouter from './routes/auth';
 // import userRouter from './routes/users';
 
+mongoose.set('useCreateIndex', true);
+
 // Connect to MongoDB database
 mongoose
   .connect(config.MONGODB_URI as string, {
@@ -115,7 +117,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {
     clients = clients.filter(
       // Using bracket notation to access private property of client
-      // Other option woule be (<any>client.client).id but that's not type safe
+      // Other option would be (<any>client.client).id but that's not type safe
       // eslint-disable-next-line dot-notation
       (client: Socket) => client.client['id'] !== socket.client['id'],
     );
