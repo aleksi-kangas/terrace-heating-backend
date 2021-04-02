@@ -6,16 +6,8 @@ import HeatPump from '../../models/heatPump';
  * @param value to be signed
  * @return signed number
  */
-export const signValue = (value: number): number => {
-  let signed = value;
-  // Sign 16 bit values
-  if (value > 65535 / 2) {
-    signed = value - 65536;
-  }
-  // Place decimal separator to the correct place
-  signed /= 10;
-  return signed;
-};
+// eslint-disable-next-line no-bitwise
+export const signValue = (value: number): number => ((value << 16) >> 16) / 10;
 
 /**
  * Helper function for cleaning up the database of old entries.
