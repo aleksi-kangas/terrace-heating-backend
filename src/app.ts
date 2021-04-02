@@ -14,6 +14,7 @@ import config from './utils/config';
 import ModBusApi from './services/modbus/api';
 import User from './models/user';
 import { recordsCleanup } from './services/modbus/helpers';
+import { automatedTankLimitAdjust } from './services/modbus/automation';
 
 // Routers
 import heatPumpRouter from './routes/heatPump';
@@ -135,6 +136,7 @@ cron.schedule('* * * * *', async () => {
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
     console.log(`Query complete. ${queriedData.time}`);
+    if (queriedData.compressorRunning) await automatedTankLimitAdjust();
     await recordsCleanup();
   } catch (exception) {
     console.error('Query could not be completed:', exception.message);
