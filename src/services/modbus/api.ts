@@ -71,6 +71,25 @@ const queryActiveCircuits = async (): Promise<number> => {
 };
 
 /**
+ * Queries the current heat exchanger ratio from the heat-pump.
+ * The returned value must be signed before usage with signValue() function.
+ * @return number current value of the heat exchanger ratio as integer representing percentage, e.g. 25
+ */
+const queryHeatExchangerRatio = async (): Promise<number> => {
+  const heatExchangerRatio = await client.readHoldingRegisters(123, 1);
+  return heatExchangerRatio.data[0];
+};
+
+/**
+ * Writes a new heat exchanger ratio to the heat-pump.
+ * Parameter is multiplied by 10 to remove the decimal point.
+ * @param heatExchangerRatio as a integer value representing percentage, e.g. 25
+ */
+const setHeatExchangerRatio = async (heatExchangerRatio: number): Promise<void> => {
+  await client.writeRegister(123, heatExchangerRatio * 10);
+};
+
+/**
  * Queries the boosting schedule of either 'lowerTank' or 'heatDistCircuit3' (ScheduleVariable) from the heat-pump.
  * Returns a VariableHeatingSchedule-object which contains start and end hour and temperature delta for each weekday.
  * @param variable ScheduleVariable.LowerTank || ScheduleVariable.HeatDistCircuit3
@@ -121,9 +140,11 @@ const ModBusApi = {
   enableScheduling,
   disableScheduling,
   queryActiveCircuits,
+  queryHeatExchangerRatio,
   queryHeatPumpValues,
   querySchedule,
   querySchedulingStatus,
+  setHeatExchangerRatio,
   setSchedule,
 };
 
