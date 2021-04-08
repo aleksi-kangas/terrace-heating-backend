@@ -1,6 +1,18 @@
 import HeatPump from '../../models/heatPump';
+import ModBusApi from './api';
+import { signValue } from './helpers';
 
-export const automatedTankLimitAdjust = async (): Promise<void> => {
+// Holds at maximum 5 values of difference in estimated minutes left till upper limit is reached
+let buffer: number[] = [];
+
+const adjustmentThreshold = 25;
+
+const calculateAverage = () => {
+  const sum = buffer.reduce((s: number, estMinutesLeftDiff: number) => s + estMinutesLeftDiff, 0);
+  return sum / buffer.length;
+};
+
+export const automatedHeatExchangeRatio = async (): Promise<void> => {
   const lastTwoEntries = await HeatPump.find().sort({ field: 'asc', _id: -1 }).limit(2);
   if (lastTwoEntries.length >= 2) {
     const thisEntry = lastTwoEntries[0];
@@ -17,7 +29,11 @@ export const automatedTankLimitAdjust = async (): Promise<void> => {
       thisEntry.upperTankTemp - previousEntry.upperTankTemp + Number.EPSILON) * 100) / 100;
 
     // Adjusting is not needed when temperature change is not positive
-    if (lowerTankTempDelta <= 0 || upperTankTempDelta <= 0) return;
+    if (lowerTankTempDelta <= 0 || upperTankTempDelta <= 0) {
+      // Clear the buffer
+      buffer = [];
+      return;
+    }
 
     // Estimated minutes left until temperature reaches upper limit
     const estMinutesTillUpperLimit = {
@@ -29,19 +45,31 @@ export const automatedTankLimitAdjust = async (): Promise<void> => {
       ) / 100,
     };
 
-    console.log('Estimated time remaining for Lower: ', estMinutesTillUpperLimit.lowerTank);
-    console.log('Estimated time remaining for Upper: ', estMinutesTillUpperLimit.upperTank);
-
-    // TODO Adjustment and thresholds
-    if (estMinutesTillUpperLimit.lowerTank < estMinutesTillUpperLimit.upperTank) {
-      console.log('Lower Tank line should be lowered');
+    // Keep the buffer at max size 5
+    if (buffer.length === 5) {
+      buffer.shift();
     }
-    if (estMinutesTillUpperLimit.upperTank < estMinutesTillUpperLimit.lowerTank) {
-      console.log('Upper Tank line should be lowered');
+    buffer.push(estMinutesTillUpperLimit.lowerTank - estMinutesTillUpperLimit.upperTank);
+
+    // Check if adjusting threshold is exceeded
+    const average = calculateAverage();
+
+    if (buffer.length === 5 && Math.abs(average) >= adjustmentThreshold) {
+      const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
+      if (average < 0) {
+        const newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, 50);
+        console.log('Average < 0: ', newHeatExchangerRatio);
+        // await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+      }
+      if (average > 0) {
+        const newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, 10);
+        console.log('Average > 0: ', newHeatExchangerRatio);
+        // await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+      }
     }
   }
 };
 
 export default {
-  automatedTankLimitAdjust,
+  automatedHeatExchangeRatio,
 };
