@@ -58,13 +58,15 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
       const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
       if (average < 0) {
         const newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, 50);
+        console.log(Date.now());
         console.log('Average < 0: ', newHeatExchangerRatio);
-        // await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
       }
       if (average > 0) {
         const newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, 10);
+        console.log(Date.now());
         console.log('Average > 0: ', newHeatExchangerRatio);
-        // await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
       }
       // Clear buffer
       buffer = [];
