@@ -28,8 +28,8 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
     const upperTankTempDelta = Math.round((
       thisEntry.upperTankTemp - previousEntry.upperTankTemp + Number.EPSILON) * 100) / 100;
 
-    // Adjusting is not needed when temperature change is not positive
-    if (lowerTankTempDelta <= 0 || upperTankTempDelta <= 0) {
+    // Adjusting is not needed when temperature change is negative
+    if (lowerTankTempDelta < 0 || upperTankTempDelta < 0) {
       // Clear the buffer
       buffer = [];
       return;
