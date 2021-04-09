@@ -1,6 +1,8 @@
+import moment from 'moment';
 import HeatPump from '../../models/heatPump';
 import ModBusApi from './api';
 import { signValue } from './helpers';
+import Logger from '../../utils/logger';
 
 // Holds at maximum 5 values of difference in estimated minutes left till upper limit is reached
 let buffer: number[] = [];
@@ -58,14 +60,12 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
       const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
       if (average < 0) {
         const newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, 50);
-        console.log(Date.now());
-        console.log('Average < 0: ', newHeatExchangerRatio);
+        Logger.info(`Heat exchanger ratio increased to ${newHeatExchangerRatio} at ${moment.now()}`);
         await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
       }
       if (average > 0) {
         const newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, 10);
-        console.log(Date.now());
-        console.log('Average > 0: ', newHeatExchangerRatio);
+        Logger.info(`Heat exchanger ratio decreased to ${newHeatExchangerRatio} at ${moment.now()}`);
         await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
       }
       // Clear buffer

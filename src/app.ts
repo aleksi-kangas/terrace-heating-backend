@@ -15,6 +15,7 @@ import ModBusApi from './services/modbus/api';
 import User from './models/user';
 import { recordsCleanup } from './services/modbus/helpers';
 import { automatedHeatExchangeRatio } from './services/modbus/automation';
+import Logger from './utils/logger';
 
 // Routers
 import heatPumpRouter from './routes/heatPump';
@@ -30,7 +31,7 @@ mongoose
     useUnifiedTopology: true,
   })
   .catch((error) => {
-    console.error(error.message);
+    Logger.error(error.message);
   });
 
 const app = express();
@@ -132,10 +133,11 @@ cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
+    Logger.info(`Query completed at ${queriedData.time}`);
     if (queriedData.compressorRunning) await automatedHeatExchangeRatio();
     await recordsCleanup();
   } catch (exception) {
-    console.error('Query could not be completed:', exception.message);
+    Logger.error('Query could not be completed: ', exception.message);
   }
 }, {});
 
