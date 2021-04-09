@@ -66,6 +66,8 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
         console.log('Average > 0: ', newHeatExchangerRatio);
         // await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
       }
+      // Clear buffer
+      buffer = [];
     }
   }
 };
