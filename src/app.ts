@@ -105,7 +105,6 @@ io.on('connection', (socket: Socket) => {
   socket.on('login', async () => {
     if (socket.handshake.session?.user) {
       clients.push(socket);
-      console.log(`New client ${socket.id} connected`);
       const userObject = await User.findById(socket.handshake.session.user);
       socket.emit('authenticated', {
         id: userObject?.id,
@@ -122,8 +121,6 @@ io.on('connection', (socket: Socket) => {
       // eslint-disable-next-line dot-notation
       (client: Socket) => client.client['id'] !== socket.client['id'],
     );
-    // eslint-disable-next-line dot-notation
-    console.log(`Client ${socket.client['id']} disconnected`);
   });
 });
 
@@ -135,7 +132,6 @@ cron.schedule('* * * * *', async () => {
   try {
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
-    console.log(`Query complete. ${queriedData.time}`);
     if (queriedData.compressorRunning) await automatedHeatExchangeRatio();
     await recordsCleanup();
   } catch (exception) {
