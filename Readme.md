@@ -27,6 +27,7 @@ The features of the Express.js backend include:
 - Simplified REST API providing a frontend means for displaying the heat-pump data.
   - Secure session authorization with HTTP-only cookies implemented.
 - Providing the possibility to control selected heat-pump features related to terrace heating via ModBus protocol.
+- Automatically adjusts heat exchanger ratio (super-heater, Fin. tulistin) according to lower and upper tank temperatures and their limits.
 
 ## Implementation
 - Communication with the heat-pump is established with ModBus TCP protocol using [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) library.
@@ -48,12 +49,16 @@ client.connectTCP(config.MODBUS_HOST as string, { port: Number(config.MODBUS_POR
  */
 cron.schedule('* * * * *', async () => {
   try {
+    // Query heat-pump data
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
-    console.log(`Query complete. ${queriedData.time}`);
+    Logger.info(`Query completed at ${queriedData.time}`);
+    // Adjust heat exchanger ratio automatically
+    if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
+    // Clean-up
     await recordsCleanup();
   } catch (exception) {
-    console.error('Query could not be completed:', exception.message);
+    Logger.error('Query could not be completed: ', exception.message);
   }
 }, {});
 ```
