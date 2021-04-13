@@ -14,7 +14,7 @@ import config from './utils/config';
 import ModBusApi from './services/modbus/api';
 import User from './models/user';
 import { recordsCleanup } from './services/modbus/helpers';
-import { automatedHeatExchangeRatio } from './services/modbus/automation';
+import { automatedHeatExchangerRatio } from './services/modbus/automation';
 import Logger from './utils/logger';
 
 // Routers
@@ -134,7 +134,7 @@ cron.schedule('* * * * *', async () => {
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
     Logger.info(`Query completed at ${queriedData.time}`);
-    if (queriedData.compressorRunning) await automatedHeatExchangeRatio();
+    if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
     await recordsCleanup();
   } catch (exception) {
     Logger.error('Query could not be completed: ', exception.message);

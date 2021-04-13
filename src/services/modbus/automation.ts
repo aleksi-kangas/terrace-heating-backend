@@ -26,7 +26,7 @@ const calculateAverage = () => {
  * Estimate differences are kept in a buffer, and if a threshold is exceeded,
  * the heat exchanger ratio (Fin. tulistin) is adjusted accordingly.
  */
-export const automatedHeatExchangeRatio = async (): Promise<void> => {
+export const automatedHeatExchangerRatio = async (): Promise<void> => {
   const lastTwoEntries = await HeatPump.find().sort({ field: 'asc', _id: -1 }).limit(2);
   if (lastTwoEntries.length >= 2) {
     const thisEntry = lastTwoEntries[0];
@@ -91,5 +91,5 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
 };
 
 export default {
-  automatedHeatExchangeRatio,
+  automatedHeatExchangerRatio,
 };
