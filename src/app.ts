@@ -141,13 +141,12 @@ cron.schedule('* * * * *', async () => {
     // Query heat-pump data
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
-    Logger.info(`Query completed at ${queriedData.time}`);
     // Adjust heat exchanger ratio automatically
     if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
     // Clean-up
     await recordsCleanup();
   } catch (exception) {
-    Logger.error('Query could not be completed: ', exception.message);
+    Logger.error(exception.message);
   }
 }, {});
 
