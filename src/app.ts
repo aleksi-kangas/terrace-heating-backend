@@ -17,14 +17,18 @@ import { recordsCleanup } from './services/modbus/helpers';
 import { automatedHeatExchangerRatio } from './services/modbus/automation';
 import Logger from './utils/logger';
 
-// Routers
+/*
+Routers
+ */
 import heatPumpRouter from './routes/heatPump';
 import authRouter from './routes/auth';
 // import userRouter from './routes/users';
 
+/*
+MongoDB
+ */
 mongoose.set('useCreateIndex', true);
 
-// Connect to MongoDB database
 mongoose
   .connect(config.MONGODB_URI as string, {
     useNewUrlParser: true,
@@ -36,13 +40,14 @@ mongoose
 
 const app = express();
 
-// Middleware
+/*
+Middleware
+ */
 app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
 
-// Middleware for sessions
 const sessionMiddleware = session({
   secret: config.SESSIONS as string,
   resave: false,
@@ -60,12 +65,14 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 
-// Routes
+/*
+Routes
+ */
 app.use('/api/heat-pump', heatPumpRouter);
 app.use('/api/auth', authRouter);
 // app.use('/api/users', userRouter);
 
-// Server static files of the frontend
+// Serve static files of the frontend
 app.use(express.static('./build'));
 app.get('*', (_request: Request, response: Response) => {
   response.sendFile(path.join(__dirname, '../build/index.html'));
@@ -125,16 +132,19 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-/**
+/*
  * Cronjob for querying heat-pump values each minute.
  * Queried values are saved to the database and sent to connected clients via WebSocket connection.
  */
 cron.schedule('* * * * *', async () => {
   try {
+    // Query heat-pump data
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
     Logger.info(`Query completed at ${queriedData.time}`);
+    // Adjust heat exchanger ratio automatically
     if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
+    // Clean-up
     await recordsCleanup();
   } catch (exception) {
     Logger.error('Query could not be completed: ', exception.message);
