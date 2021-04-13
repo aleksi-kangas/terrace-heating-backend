@@ -9,11 +9,23 @@ let buffer: number[] = [];
 
 const adjustmentThreshold = 25;
 
+/**
+ * Helper function for calculating the average of the buffer,
+ * that contains entries of differences in minutes before upper limits are reached.
+ * @return number average difference in minutes before upper limits are reached
+ */
 const calculateAverage = () => {
   const sum = buffer.reduce((s: number, estMinutesLeftDiff: number) => s + estMinutesLeftDiff, 0);
   return sum / buffer.length;
 };
 
+/**
+ * Automatically changes the heat exchanger ratio of the heat-pump,
+ * to better keep lowerTank and upperTank temperatures within their limits.
+ * Changes are based on calculating the estimated times until the tank temperatures reach their upper limits.
+ * Estimate differences are kept in a buffer, and if a threshold is exceeded,
+ * the heat exchanger ratio (Fin. tulistin) is adjusted accordingly.
+ */
 export const automatedHeatExchangeRatio = async (): Promise<void> => {
   const lastTwoEntries = await HeatPump.find().sort({ field: 'asc', _id: -1 }).limit(2);
   if (lastTwoEntries.length >= 2) {
@@ -60,13 +72,17 @@ export const automatedHeatExchangeRatio = async (): Promise<void> => {
       const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
       if (average < 0) {
         const newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, 50);
-        Logger.info(`Heat exchanger ratio increased to ${newHeatExchangerRatio} at ${moment.now()}`);
-        await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        if (heatExchangerRatio !== newHeatExchangerRatio) {
+          Logger.info(`Heat exchanger ratio increased to ${newHeatExchangerRatio} at ${moment.now()}`);
+          await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        }
       }
       if (average > 0) {
         const newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, 10);
-        Logger.info(`Heat exchanger ratio decreased to ${newHeatExchangerRatio} at ${moment.now()}`);
-        await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        if (heatExchangerRatio !== newHeatExchangerRatio) {
+          Logger.info(`Heat exchanger ratio decreased to ${newHeatExchangerRatio} at ${moment.now()}`);
+          await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        }
       }
       // Clear buffer
       buffer = [];
