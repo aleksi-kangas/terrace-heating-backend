@@ -1,4 +1,4 @@
-﻿import HeatPump from '../../models/heatPump';
+import HeatPump from '../../models/heatPump';
 import ModBusApi from './api';
 import { signValue } from './helpers';
 import Logger from '../../utils/logger';
@@ -94,24 +94,26 @@ export const automatedHeatExchangerRatio = async (): Promise<void> => {
       const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
       let newHeatExchangerRatio = heatExchangerRatio;
 
+      /*
+      Determine the new value of heat exchanger ratio.
+      If the upper tank is estimated to reach the upper limit first, decrease the ratio of the heat exchanger.
+      If the lower tank is estimated to reach the upper limit first, increase the ratio of the heat exchanger.
+       */
       if (average < 0) {
         newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, RATIO_UPPER_BOUND);
       } else if (average > 0) {
         newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, RATIO_LOWER_BOUND);
       }
 
+      // Adjust only if possible
       if (newHeatExchangerRatio === RATIO_LOWER_BOUND) {
         Logger.info(`Heat exchanger ratio is already at the lower bound (${RATIO_LOWER_BOUND})`);
-        return;
-      }
-
-      if (newHeatExchangerRatio === RATIO_UPPER_BOUND) {
+      } else if (newHeatExchangerRatio === RATIO_UPPER_BOUND) {
         Logger.info(`Heat exchanger ratio is already at the upper bound (${RATIO_UPPER_BOUND})`);
-        return;
+      } else {
+        await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+        Logger.info(`Heat exchanger ratio changed to ${newHeatExchangerRatio}`);
       }
-
-      await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
-      Logger.info(`Heat exchanger ratio changed to ${newHeatExchangerRatio}`);
 
       // Clear buffer
       buffer = [];
