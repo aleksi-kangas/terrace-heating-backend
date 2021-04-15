@@ -1,5 +1,4 @@
-import moment from 'moment';
-import HeatPump from '../../models/heatPump';
+﻿import HeatPump from '../../models/heatPump';
 import ModBusApi from './api';
 import { signValue } from './helpers';
 import Logger from '../../utils/logger';
@@ -8,7 +7,9 @@ import { HeatPumpEntry } from '../../types';
 // Holds at maximum 5 values of difference in estimated minutes left till upper limit is reached
 let buffer: number[] = [];
 
-const adjustmentThreshold = 25;
+const ADJUSTMENT_THRESHOLD = 25;
+const RATIO_LOWER_BOUND = 10;
+const RATIO_UPPER_BOUND = 50;
 
 /**
  * Helper function for calculating the average of the buffer,
@@ -62,9 +63,9 @@ export const automatedHeatExchangerRatio = async (): Promise<void> => {
     const thisEntry = lastTwoEntries[0];
     const previousEntry = lastTwoEntries[1];
 
-    // If both lower and upper tank already breached the upper limit -> do nothing
+    // If either lower or upper tank already breached the upper limit -> do nothing
     if (thisEntry.lowerTankTemp > thisEntry.lowerTankUpperLimit
-      && thisEntry.upperTankTemp > thisEntry.upperTankUpperLimit) return;
+      || thisEntry.upperTankTemp > thisEntry.upperTankUpperLimit) return;
 
     // Calculate temperature deltas for lower and upper tank
     const tempDeltas = temperatureDeltas(thisEntry, previousEntry);
@@ -89,26 +90,29 @@ export const automatedHeatExchangerRatio = async (): Promise<void> => {
     const average = calculateAverage();
 
     // Adjust only when there are 5 consecutive positive temperature deltas and the adjusting threshold is exceeded
-    if (buffer.length === 5 && Math.abs(average) >= adjustmentThreshold) {
+    if (buffer.length === 5 && Math.abs(average) >= ADJUSTMENT_THRESHOLD) {
       const heatExchangerRatio = signValue(await ModBusApi.queryHeatExchangerRatio());
+      let newHeatExchangerRatio = heatExchangerRatio;
+
       if (average < 0) {
-        const newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, 50);
-        if (heatExchangerRatio !== newHeatExchangerRatio) {
-          Logger.info(`Heat exchanger ratio increased to ${newHeatExchangerRatio} at ${moment.now()}`);
-          await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
-        } else {
-          Logger.info(`Heat exchanger ratio is already at the upper bound (50) - ${moment.now()}`);
-        }
+        newHeatExchangerRatio = Math.min(heatExchangerRatio + 5, RATIO_UPPER_BOUND);
+      } else if (average > 0) {
+        newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, RATIO_LOWER_BOUND);
       }
-      if (average > 0) {
-        const newHeatExchangerRatio = Math.max(heatExchangerRatio - 5, 10);
-        if (heatExchangerRatio !== newHeatExchangerRatio) {
-          Logger.info(`Heat exchanger ratio decreased to ${newHeatExchangerRatio} at ${moment.now()}`);
-          await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
-        } else {
-          Logger.info(`Heat exchanger ratio is already at the lower bound (10) - ${moment.now()}`);
-        }
+
+      if (newHeatExchangerRatio === RATIO_LOWER_BOUND) {
+        Logger.info(`Heat exchanger ratio is already at the lower bound (${RATIO_LOWER_BOUND})`);
+        return;
       }
+
+      if (newHeatExchangerRatio === RATIO_UPPER_BOUND) {
+        Logger.info(`Heat exchanger ratio is already at the upper bound (${RATIO_UPPER_BOUND})`);
+        return;
+      }
+
+      await ModBusApi.setHeatExchangerRatio(newHeatExchangerRatio);
+      Logger.info(`Heat exchanger ratio changed to ${newHeatExchangerRatio}`);
+
       // Clear buffer
       buffer = [];
     }
