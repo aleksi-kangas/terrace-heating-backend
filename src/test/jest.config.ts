@@ -1,12 +1,5 @@
 ﻿import type { Config } from '@jest/types';
 
-// module.exports = {
-//   transform: { '^.+\\.ts?$': 'ts-jest' },
-//   testEnvironment: 'node',
-//   testRegex: '/tests/.*\\.(test|spec)?\\.(ts|tsx)$',
-//   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-// };
-
 const config: Config.InitialOptions = {
   verbose: true,
   preset: 'ts-jest',
@@ -14,5 +7,8 @@ const config: Config.InitialOptions = {
   testTimeout: 30000,
   roots: ['<rootDir>/src'],
   restoreMocks: true,
+  // transform: {
+  //   '^.+\\.tsx?$': 'ts-jest',
+  // },
 };
 export default config;
