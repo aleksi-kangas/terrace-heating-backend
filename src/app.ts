@@ -48,20 +48,30 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const sessionMiddleware = session({
-  secret: config.SESSIONS as string,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 1000 * 60 * 60,
-    httpOnly: true,
-  },
-  store: MongoStore.create({
-    mongoUrl: config.MONGODB_URI,
-    dbName: 'sessions',
-    stringify: false,
-  }),
-});
+let sessionMiddleware;
+
+if (process.env.NODE_ENV === 'test') {
+  sessionMiddleware = session({
+    secret: config.SESSIONS as string,
+    resave: false,
+    saveUninitialized: false,
+  });
+} else {
+  sessionMiddleware = session({
+    secret: config.SESSIONS as string,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60,
+      httpOnly: true,
+    },
+    store: MongoStore.create({
+      mongoUrl: config.MONGODB_URI,
+      dbName: 'sessions',
+      stringify: false,
+    }),
+  });
+}
 
 app.use(sessionMiddleware);
 
@@ -136,18 +146,23 @@ io.on('connection', (socket: Socket) => {
  * Cronjob for querying heat-pump values each minute.
  * Queried values are saved to the database and sent to connected clients via WebSocket connection.
  */
-cron.schedule('* * * * *', async () => {
-  try {
-    // Query heat-pump data
-    const queriedData = await ModBusApi.queryHeatPumpValues();
-    clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
-    // Adjust heat exchanger ratio automatically
-    if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
-    // Clean-up
-    await recordsCleanup();
-  } catch (exception) {
-    Logger.error(exception.message);
-  }
-}, {});
+if (process.env.NODE_ENV !== 'test') {
+  cron.schedule('* * * * *', async () => {
+    try {
+      // Query heat-pump data
+      const queriedData = await ModBusApi.queryHeatPumpValues();
+      clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
+      // Adjust heat exchanger ratio automatically
+      if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
+      // Clean-up
+      await recordsCleanup();
+    } catch (exception) {
+      Logger.error(exception.message);
+    }
+  },
+  {});
+}
 
-httpServer.listen(config.PORT);
+export const server = httpServer.listen(config.PORT);
+
+export default app;
