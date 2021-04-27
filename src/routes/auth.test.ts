@@ -4,8 +4,8 @@ import supertest from 'supertest';
 import session from 'supertest-session';
 import app from '../app';
 // @ts-ignore
-import TestSetup from '../../test/testSetup';
-import TestConstants from '../../test/testConstants';
+import TestSetup from '../test/testSetup';
+import TestConstants from '../test/testConstants';
 import { UserDocument } from '../models/user';
 import DoneCallback = jest.DoneCallback;
 
