@@ -1,10 +1,10 @@
 import bcryptjs from 'bcryptjs';
 import mongoose from 'mongoose';
-import { server } from '../src/app';
-import User, { UserDocument } from '../src/models/user';
-import config from '../src/utils/config';
-import Logger from '../src/utils/logger';
-import HeatPump from '../src/models/heatPump';
+import { server } from '../app';
+import User, { UserDocument } from '../models/user';
+import config from '../utils/config';
+import Logger from '../utils/logger';
+import HeatPump from '../models/heatPump';
 // @ts-ignore
 import TestConstants from './testConstants';
 import DoneCallback = jest.DoneCallback;
