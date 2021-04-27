@@ -3,8 +3,8 @@ import supertest from 'supertest';
 // @ts-ignore
 import session from 'supertest-session';
 import app from '../app';
-import TestSetup from '../../test/testSetup';
-import TestConstants from '../../test/testConstants';
+import TestSetup from '../test/testSetup';
+import TestConstants from '../test/testConstants';
 import HeatPumpService from '../services/heatPumpService';
 import ModBusApi from '../services/modbus/api';
 import { HeatingStatus } from '../types';
