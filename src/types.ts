@@ -62,6 +62,7 @@ export enum ScheduleVariable {
   LowerTank = 'lowerTank',
   HeatDistCircuit3 = 'heatDistCircuit3'
 }
+
 export type WeekDaySchedule = {
   [key in WeekDayScheduleKeys]: number
 }

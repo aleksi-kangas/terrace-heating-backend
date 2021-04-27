@@ -32,13 +32,11 @@ authRouter.post('/login', async (request: Request, response: Response) => {
   // Add user to the session property
   request.session.user = user.id;
 
-  return response
-    .status(200)
-    .send({
-      id: user.id,
-      username: user.username,
-      name: user.name,
-    });
+  return response.status(200).json({
+    id: user.id,
+    username: user.username,
+    name: user.name,
+  });
 });
 
 /**
@@ -58,7 +56,7 @@ authRouter.post('/logout', (request: Request, response: Response) => {
 authRouter.get('/session', async (request: Request, response: Response) => {
   if (request.session.user) {
     const userObject = await User.findById(request.session.user);
-    return response.send({
+    return response.status(200).json({
       id: userObject?.id,
       name: userObject?.name,
       username: userObject?.username,

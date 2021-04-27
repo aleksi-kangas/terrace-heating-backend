@@ -28,7 +28,8 @@ export const authorize = (
   request: Request, response: Response, next: NextFunction,
 ): Response | void => {
   if (!request.session.user) {
-    return response.status(401).end();
+    return response.status(401)
+      .end();
   }
   return next();
 };
@@ -38,4 +39,5 @@ export const authorize = (
  */
 export const unknownEndpoint = (
   request: Request, response: Response,
-): Response => response.status(404).json({ error: 'unknown endpoint' });
+): Response => response.status(404)
+  .json({ error: 'unknown endpoint' });

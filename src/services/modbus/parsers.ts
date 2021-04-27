@@ -102,7 +102,12 @@ export const parseTankLimits = async (
   upperTankLowerLimit: number, upperTankUpperLimit: number,
   timeStamp: moment.Moment,
 ): Promise<TankLimits> => {
-  const latestHeatPumpEntry = await HeatPump.findOne().sort({ field: 'asc', _id: -1 }).limit(1);
+  const latestHeatPumpEntry = await HeatPump.findOne()
+    .sort({
+      field: 'asc',
+      _id: -1,
+    })
+    .limit(1);
 
   // Updating limits every ten minutes
   if (!latestHeatPumpEntry || timeStamp.minutes() % 10 === 0) {

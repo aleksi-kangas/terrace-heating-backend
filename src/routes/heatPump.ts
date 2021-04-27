@@ -51,7 +51,8 @@ heatPumpRouter.post('/start', authorize, async (request: Request, response: Resp
     await HeatPumpService.startCircuitThree();
     heatingStatus = await HeatPumpService.getStatus();
   }
-  return response.status(200).json(heatingStatus);
+  return response.status(200)
+    .json(heatingStatus);
 });
 
 /**
@@ -63,7 +64,8 @@ heatPumpRouter.post('/start', authorize, async (request: Request, response: Resp
 heatPumpRouter.post('/stop', authorize, async (_request: Request, response: Response) => {
   await HeatPumpService.stopCircuitThree();
   const heatingStatus = await HeatPumpService.getStatus();
-  return response.status(200).json(heatingStatus);
+  return response.status(200)
+    .json(heatingStatus);
 });
 
 /**
@@ -77,12 +79,14 @@ heatPumpRouter.post('/stop', authorize, async (_request: Request, response: Resp
 heatPumpRouter.get('/schedules/:variable', authorize, async (request: Request, response: Response) => {
   const { variable } = request.params;
   if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
-    return response.json({
-      error: 'Unknown variable',
-    }).status(400).end();
+    return response.status(400)
+      .json({
+        error: 'Unknown variable',
+      });
   }
   const heatingSchedule = await HeatPumpService.getSchedule(variable);
-  return response.json(heatingSchedule);
+  return response.status(200)
+    .json(heatingSchedule);
 });
 
 /**
@@ -95,13 +99,15 @@ heatPumpRouter.get('/schedules/:variable', authorize, async (request: Request, r
 heatPumpRouter.post('/schedules/:variable', authorize, async (request: Request, response: Response) => {
   const { variable } = request.params;
   if (variable !== ScheduleVariable.HeatDistCircuit3 && variable !== ScheduleVariable.LowerTank) {
-    return response.status(400).json({
-      error: 'Unknown variable',
-    }).end();
+    return response.status(400)
+      .json({
+        error: 'Unknown variable',
+      });
   }
   const { schedule } = request.body;
   await HeatPumpService.setSchedule(variable, schedule);
-  return response.status(200).end();
+  return response.status(200)
+    .end();
 });
 
 /**
@@ -121,11 +127,13 @@ heatPumpRouter.get('/scheduling', authorize, async (_request: Request, response:
  */
 heatPumpRouter.post('/scheduling/', authorize, async (request: Request, response: Response) => {
   if (!('schedulingEnabled' in request.body)) {
-    return response.status(400).json({ error: 'Property schedulingEnabled is missing from the request body' });
+    return response.status(400)
+      .json({ error: 'Property schedulingEnabled is missing from the request body' });
   }
   const { schedulingEnabled } = request.body;
   const newStatus = await HeatPumpService.setSchedulingEnabled(Boolean(schedulingEnabled));
-  return response.status(200).json(newStatus);
+  return response.status(200)
+    .json(newStatus);
 });
 
 export default heatPumpRouter;

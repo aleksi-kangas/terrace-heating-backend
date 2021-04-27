@@ -20,13 +20,17 @@ export interface HeatPumpEntryDocument extends Document {
   upperTankLowerLimit: number,
   upperTankUpperLimit: number,
 }
+
 /**
  * Mongoose Schema for heat pump data.
  *
  * Contains predetermined fields for storing heat pump data gathered with ModBus.
  */
 const heatPumpSchema: Schema = new Schema({
-  time: { type: Date, required: true },
+  time: {
+    type: Date,
+    required: true,
+  },
   outsideTemp: Number,
   insideTemp: Number,
   hotGasTemp: Number,

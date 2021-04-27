@@ -58,14 +58,21 @@ const estimatedTimesLeftUntilUpperLimits = (
  * the heat exchanger ratio (Fin. tulistin) is adjusted accordingly.
  */
 export const automatedHeatExchangerRatio = async (): Promise<void> => {
-  const lastTwoEntries = await HeatPump.find().sort({ field: 'asc', _id: -1 }).limit(2);
+  const lastTwoEntries = await HeatPump.find()
+    .sort({
+      field: 'asc',
+      _id: -1,
+    })
+    .limit(2);
   if (lastTwoEntries.length >= 2) {
     const thisEntry = lastTwoEntries[0];
     const previousEntry = lastTwoEntries[1];
 
     // If either lower or upper tank already breached the upper limit -> do nothing
     if (thisEntry.lowerTankTemp > thisEntry.lowerTankUpperLimit
-      || thisEntry.upperTankTemp > thisEntry.upperTankUpperLimit) return;
+      || thisEntry.upperTankTemp > thisEntry.upperTankUpperLimit) {
+      return;
+    }
 
     // Calculate temperature deltas for lower and upper tank
     const tempDeltas = temperatureDeltas(thisEntry, previousEntry);

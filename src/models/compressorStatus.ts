@@ -10,8 +10,14 @@ export interface CompressorStatusDocument extends Document {
  * Mongoose Schema for compressor start and stop timestamps.
  */
 const compressorSchema: Schema = new Schema({
-  time: { type: Date, required: true },
-  type: { type: String, required: true },
+  time: {
+    type: Date,
+    required: true,
+  },
+  type: {
+    type: String,
+    required: true,
+  },
 });
 
 const CompressorStatus = mongoose.model<CompressorStatusDocument>('CompressorStatus', compressorSchema);

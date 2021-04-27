@@ -88,7 +88,8 @@ const getStatus = async (): Promise<HeatingStatus> => {
     }
     const circuitThreeSchedule = await getSchedule(ScheduleVariable.HeatDistCircuit3);
     const now = new Date();
-    const weekDay = Object.values(WeekDays)[moment().isoWeekday() - 1];
+    const weekDay = Object.values(WeekDays)[moment()
+      .isoWeekday() - 1];
     const scheduleHours = circuitThreeSchedule[weekDay];
     if (Number(scheduleHours.start) < now.getHours() + 1
       && now.getHours() + 1 < Number(scheduleHours.end)) {
