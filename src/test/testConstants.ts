@@ -1,8 +1,9 @@
 ﻿import moment from 'moment';
+import { VariableHeatingSchedule } from '../types';
 
 const initialHeatPumpData = [
   {
-    time: moment().subtract(3, 'minutes'),
+    time: moment().subtract(3, 'days'),
     outsideTemp: 25.5,
     hotGasTemp: 67.5,
     heatDistCircuit1Temp: 28.5,
@@ -21,7 +22,7 @@ const initialHeatPumpData = [
     upperTankUpperLimit: 58,
   },
   {
-    time: moment().subtract(2, 'minutes'),
+    time: moment().subtract(2, 'days'),
     outsideTemp: 25.6,
     hotGasTemp: 67.6,
     heatDistCircuit1Temp: 28.6,
@@ -40,7 +41,7 @@ const initialHeatPumpData = [
     upperTankUpperLimit: 58,
   },
   {
-    time: moment().subtract(1, 'minutes'),
+    time: moment().subtract(1, 'days'),
     outsideTemp: 25.7,
     hotGasTemp: 67.7,
     heatDistCircuit1Temp: 28.7,
@@ -66,7 +67,7 @@ const initialUser = {
   password: 'password',
 };
 
-const lowerTankHeatingSchedule = {
+const lowerTankHeatingSchedule: VariableHeatingSchedule = {
   monday: { start: 8, end: 22, delta: 2 },
   tuesday: { start: 8, end: 22, delta: 2 },
   wednesday: { start: 8, end: 22, delta: 2 },
@@ -76,4 +77,16 @@ const lowerTankHeatingSchedule = {
   sunday: { start: 8, end: 22, delta: 2 },
 };
 
-export default { initialHeatPumpData, initialUser, lowerTankHeatingSchedule };
+const heatDistCircuit3Schedule: VariableHeatingSchedule = {
+  monday: { start: 6, end: 23, delta: 2 },
+  tuesday: { start: 6, end: 23, delta: 2 },
+  wednesday: { start: 6, end: 23, delta: 2 },
+  thursday: { start: 6, end: 23, delta: 2 },
+  friday: { start: 6, end: 23, delta: 2 },
+  saturday: { start: 6, end: 23, delta: 2 },
+  sunday: { start: 6, end: 23, delta: 2 },
+};
+
+export default {
+  initialHeatPumpData, initialUser, lowerTankHeatingSchedule, heatDistCircuit3Schedule,
+};

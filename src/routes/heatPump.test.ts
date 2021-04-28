@@ -2,6 +2,7 @@
 import supertest from 'supertest';
 // @ts-ignore
 import session from 'supertest-session';
+import moment from 'moment';
 import app from '../app';
 import TestSetup from '../test/testSetup';
 import TestConstants from '../test/testConstants';
@@ -56,10 +57,33 @@ describe('Authorized access', () => {
         .get('/api/heat-pump/')
         .expect(200);
     });
-    it('GET / should return json', async () => {
+
+    it('GET / should returns json', async () => {
       await authenticatedAPI
         .get('/api/heat-pump/')
         .expect('Content-Type', /application\/json/);
+    });
+
+    it('GET / request returns all data if date is not given', async () => {
+      const result = await authenticatedAPI
+        .get('/api/heat-pump/')
+        .expect(200);
+
+      expect(result.body).toHaveLength(3);
+    });
+
+    it('GET / request returns data after the given date threshold', async () => {
+      const now = moment();
+      const result = await authenticatedAPI
+        .get('/api/heat-pump/')
+        .query({
+          year: now.year(),
+          month: `0${now.month() + 1}`,
+          day: now.date() - 2,
+        })
+        .expect(200);
+
+      expect(result.body).toHaveLength(2);
     });
   });
 
@@ -67,8 +91,8 @@ describe('Authorized access', () => {
     it('GET /status should return heat-pump status', async () => {
       const expectedResult = HeatingStatus.Running;
 
-      const spy = jest.spyOn(HeatPumpService, 'getStatus');
-      spy.mockResolvedValue(HeatingStatus.Running);
+      HeatPumpService.getStatus = jest.fn()
+        .mockResolvedValue(HeatingStatus.Running);
 
       const result = await authenticatedAPI
         .get('/api/heat-pump/status/')
@@ -82,9 +106,8 @@ describe('Authorized access', () => {
   describe('/start', () => {
     it('POST /start with soft-start should soft-start circuit three and return soft-start status', async () => {
       ModBusApi.startCircuitThree = jest.fn();
-
-      const statusSpy = jest.spyOn(HeatPumpService, 'getStatus');
-      statusSpy.mockResolvedValue(HeatingStatus.SoftStart);
+      HeatPumpService.getStatus = jest.fn()
+        .mockResolvedValue(HeatingStatus.SoftStart);
 
       const softStartSpy = jest.spyOn(HeatPumpService, 'softStartCircuitThree');
       softStartSpy.mockImplementation(() => ModBusApi.startCircuitThree());
@@ -105,9 +128,8 @@ describe('Authorized access', () => {
     it('POST /start without soft-start should start circuit three and return running status', async () => {
       ModBusApi.startCircuitThree = jest.fn();
       ModBusApi.enableScheduling = jest.fn();
-
-      const statusSpy = jest.spyOn(HeatPumpService, 'getStatus');
-      statusSpy.mockResolvedValue(HeatingStatus.Running);
+      HeatPumpService.getStatus = jest.fn()
+        .mockResolvedValue(HeatingStatus.Running);
 
       const expectedResult = HeatingStatus.Running;
 
@@ -129,9 +151,8 @@ describe('Authorized access', () => {
     it('POST /stop should stop circuit three and return stopped status', async () => {
       ModBusApi.stopCircuitThree = jest.fn();
       ModBusApi.disableScheduling = jest.fn();
-
-      const statusSpy = jest.spyOn(HeatPumpService, 'getStatus');
-      statusSpy.mockResolvedValue(HeatingStatus.Stopped);
+      HeatPumpService.getStatus = jest.fn()
+        .mockResolvedValue(HeatingStatus.Stopped);
 
       const expectedResult = HeatingStatus.Stopped;
 
@@ -150,19 +171,24 @@ describe('Authorized access', () => {
 
   describe('/scheduling', () => {
     it('GET /scheduling should return scheduling status', async () => {
-      const querySpy = jest.spyOn(ModBusApi, 'querySchedulingStatus');
-      querySpy.mockResolvedValue(true);
+      ModBusApi.querySchedulingStatus = jest.fn()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
 
-      const expectedResult = true;
-
-      const result = await authenticatedAPI
+      const firstResult = await authenticatedAPI
         .get('/api/heat-pump/scheduling/')
         .expect(200);
 
-      expect(result.body)
-        .toEqual(expectedResult);
-      expect(querySpy)
-        .toHaveBeenCalled();
+      const secondResult = await authenticatedAPI
+        .get('/api/heat-pump/scheduling/')
+        .expect(200);
+
+      expect(firstResult.body)
+        .toEqual(true);
+      expect(secondResult.body)
+        .toEqual(false);
+      expect(ModBusApi.querySchedulingStatus)
+        .toHaveBeenCalledTimes(2);
     });
 
     it('POST /scheduling fails without schedulingEnabled in body', async () => {
@@ -179,8 +205,8 @@ describe('Authorized access', () => {
     });
 
     it('POST /scheduling with schedulingEnabled being true should call setSchedulingEnabled with true', async () => {
-      const spy = jest.spyOn(HeatPumpService, 'setSchedulingEnabled');
-      spy.mockResolvedValue(HeatingStatus.Boosting);
+      HeatPumpService.setSchedulingEnabled = jest.fn()
+        .mockResolvedValue(HeatingStatus.Boosting);
 
       const expectedResult = HeatingStatus.Boosting;
 
@@ -189,24 +215,24 @@ describe('Authorized access', () => {
         .send({ schedulingEnabled: true })
         .expect(200);
 
-      expect(spy)
+      expect(HeatPumpService.setSchedulingEnabled)
         .toHaveBeenCalledWith(true);
       expect(result.body)
         .toEqual(expectedResult);
     });
 
     it('POST /scheduling with schedulingEnabled being false should call setSchedulingEnabled with false', async () => {
-      const spy = jest.spyOn(HeatPumpService, 'setSchedulingEnabled');
-      spy.mockResolvedValue(HeatingStatus.Boosting);
+      HeatPumpService.setSchedulingEnabled = jest.fn()
+        .mockResolvedValue(HeatingStatus.Running);
 
-      const expectedResult = HeatingStatus.Boosting;
+      const expectedResult = HeatingStatus.Running;
 
       const result = await authenticatedAPI
         .post('/api/heat-pump/scheduling/')
         .send({ schedulingEnabled: false })
         .expect(200);
 
-      expect(spy)
+      expect(HeatPumpService.setSchedulingEnabled)
         .toHaveBeenCalledWith(false);
       expect(result.body)
         .toEqual(expectedResult);
@@ -228,8 +254,8 @@ describe('Authorized access', () => {
     });
 
     it('GET /schedules/:variable returns boosting schedule of a variable', async () => {
-      const scheduleSpy = jest.spyOn(HeatPumpService, 'getSchedule');
-      scheduleSpy.mockResolvedValue(TestConstants.lowerTankHeatingSchedule);
+      HeatPumpService.getSchedule = jest.fn()
+        .mockResolvedValue(TestConstants.lowerTankHeatingSchedule);
 
       const result = await authenticatedAPI
         .get('/api/heat-pump/schedules/lowerTank')
