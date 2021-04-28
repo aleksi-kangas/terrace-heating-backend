@@ -19,14 +19,14 @@ let softStart = false;
  * @return {Array<Object>} - contains heat pump data entries from the given date onwards (or all)
  */
 const getData = async (
-  date: { year: string, month: string, day: string },
+  date: { year: string | null, month: string | null, day: string | null },
 ): Promise<HeatPumpEntryDocument[]> => {
   // If any of the properties of date are missing, retrieve all entries of heat pump data.
   if (!date.year || !date.month || !date.day) {
     return HeatPump.find({});
   }
 
-  const dateThreshold = moment(`${date.year}-${date.month}-${date.day}`);
+  const dateThreshold = moment(`${date.year}${date.month}${date.day}`);
 
   // If the date is not valid, retrieve all entries of heat pump data.
   if (!dateThreshold.isValid()) {
@@ -35,8 +35,7 @@ const getData = async (
 
   // If year, month and day properties are present and form a valid date,
   // retrieve entries of heat pump data from that date onwards.
-  const dateLimit = moment(`${date.year}-${date.month}-${date.day}`);
-  return HeatPump.find({ time: { $gt: dateLimit } });
+  return HeatPump.find({ time: { $gt: dateThreshold } });
 };
 
 /**

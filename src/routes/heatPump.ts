@@ -14,9 +14,9 @@ const heatPumpRouter = express.Router();
 heatPumpRouter.get('/', authorize, async (request: Request, response: Response) => {
   // Optional query strings
   const date = {
-    year: String(request.query.year),
-    month: String(request.query.month),
-    day: String(request.query.day),
+    year: request.query.year ? String(request.query.year) : null,
+    month: request.query.month ? String(request.query.month) : null,
+    day: request.query.day ? String(request.query.day) : null,
   };
   const heatPumpData = await HeatPumpService.getData(date);
   return response.json(heatPumpData);
