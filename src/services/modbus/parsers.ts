@@ -10,6 +10,32 @@ import { HeatPumpEntry, TankLimits, VariableHeatingSchedule } from '../../types'
  */
 
 /**
+ * Helper function for calculating the percentage of compressor usage during a cycle.
+ * @param compressorStartTime time when the compressor started
+ * @param compressorStopTime time when the compressor stopped
+ * @param cycleEndTime end time of the given cycle
+ */
+const calculateCompressorUsage = (
+  compressorStartTime: moment.Moment, compressorStopTime: moment.Moment, cycleEndTime: moment.Moment,
+): number => {
+  let cycleDuration;
+  let runningDuration;
+
+  if (compressorStartTime.isBefore(compressorStopTime)) {
+    cycleDuration = moment.duration(cycleEndTime.diff(compressorStartTime));
+    runningDuration = moment.duration(compressorStopTime.diff(compressorStartTime));
+  } else {
+    cycleDuration = moment.duration(cycleEndTime.diff(compressorStopTime));
+    runningDuration = moment.duration(cycleEndTime.diff(compressorStartTime));
+  }
+
+  // Calculate compressor usage percentage
+  return Math.round(
+    (runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100,
+  ) / 100;
+};
+
+/**
  * Parses current compressor usage and determines,
  * whether the current update is either a start point or end point for a compressor cycle.
  * Cycle definition is: running time -> not running time || not running time -> running time
@@ -21,67 +47,44 @@ export const parseCompressorUsage = async (
   compressorRunning: boolean, currentQueryTime: moment.Moment,
 ): Promise<number | null> => {
   const latestHeatPumpEntry = await HeatPump.findOne({}, {}, { sort: { _id: -1 } });
-  const lastStartEntry = await CompressorStatus.findOne({ type: 'start' }, {}, { sort: { _id: -1 } });
-  const lastStopEntry = await CompressorStatus.findOne({ type: 'end' }, {}, { sort: { _id: -1 } });
 
   if (!latestHeatPumpEntry) {
     // There are no heat-pump entries to compare to yet
     return null;
   }
 
-  // Extract timestamps from previous start and stop entries
-  // const startEntryTime = lastStartEntry ? moment(lastStartEntry.time) : null;
-  // const stopEntryTime = lastStopEntry ? moment(lastStopEntry.time) : null;
+  const lastStartEntry = await CompressorStatus.findOne({ type: 'start' }, {}, { sort: { _id: -1 } });
+  const lastStopEntry = await CompressorStatus.findOne({ type: 'end' }, {}, { sort: { _id: -1 } });
 
   let compressorUsage = null;
-  let runningDuration;
-  let cycleDuration;
-
   if (compressorRunning && !latestHeatPumpEntry.compressorRunning) {
-    /*
-    Current query represents the edge between 'not running' -> 'running'.
-    Calculate the usage of compressor during the last cycle.
-    Example: RRRRRRNNNN = 60 %
-     */
+    // Current query represents the end of a cycle (running -> not running): e.g. RRRRRRNNNN = 60 %
+
+    // Calculate compressor usage during the last cycle
     if (lastStartEntry && lastStopEntry) {
-      const startEntryTime = moment(lastStartEntry.time);
-      const stopEntryTime = moment(lastStopEntry.time);
-      cycleDuration = moment.duration(currentQueryTime.diff(startEntryTime));
-      runningDuration = moment.duration(stopEntryTime.diff(startEntryTime));
+      compressorUsage = calculateCompressorUsage(lastStartEntry.time, lastStopEntry.time, currentQueryTime);
     }
-    // Add cycle start entry
+
+    // Add an entry indicating that compressor started at this moment
     const cycleStartEntry = new CompressorStatus({
       type: 'start',
       time: currentQueryTime,
     });
     await cycleStartEntry.save();
   } else if (!compressorRunning && latestHeatPumpEntry.compressorRunning) {
-    /*
-    Current query represents the edge between 'running' -> 'not running'.
-    Calculate the usage of compressor during the last cycle.
-    Calculation will be done only if the database has at least one startEntry and stopEntry.
-    Example: NNNNRRRRRR = 60 %
-     */
+    // Current query represents the end of a cycle (not running -> running): e.g. NNNNRRRRRR = 60 %
+
+    // Calculate compressor usage during the last cycle
     if (lastStartEntry && lastStopEntry) {
-      // Calculate running duration and the whole cycle duration
-      const startEntryTime = moment(lastStartEntry.time);
-      const stopEntryTime = moment(lastStopEntry.time);
-      runningDuration = moment.duration(currentQueryTime.diff(startEntryTime));
-      cycleDuration = moment.duration(currentQueryTime.diff(stopEntryTime));
+      compressorUsage = calculateCompressorUsage(lastStartEntry.time, lastStopEntry.time, currentQueryTime);
     }
-    // Add cycle end entry
+
+    // Add an entry indicating that compressor stopped at this moment
     const compressorStatusEntry = new CompressorStatus({
       type: 'end',
       time: currentQueryTime,
     });
     await compressorStatusEntry.save();
-  }
-
-  // Usage of the compressor during last cycle.
-  if (runningDuration && cycleDuration) {
-    compressorUsage = Math.round(
-      (runningDuration.asMinutes() / cycleDuration.asMinutes() + Number.EPSILON) * 100,
-    ) / 100;
   }
   return compressorUsage;
 };
