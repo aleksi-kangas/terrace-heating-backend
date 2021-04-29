@@ -28,7 +28,7 @@ The features of the Express.js backend include:
   - Secure session authorization with HTTP-only cookies implemented.
 - Providing the possibility to control selected heat-pump features related to terrace heating via ModBus protocol.
 - Automatically adjusts heat exchanger ratio (super-heater, Fin. tulistin) according to lower and upper tank temperatures and their limits.
-
+- Unit tests for automated testing
 ## Implementation
 - Communication with the heat-pump is established with ModBus TCP protocol using [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) library.
 
@@ -52,13 +52,12 @@ cron.schedule('* * * * *', async () => {
     // Query heat-pump data
     const queriedData = await ModBusApi.queryHeatPumpValues();
     clients.forEach((client: Socket) => client.emit('heatPumpData', queriedData));
-    Logger.info(`Query completed at ${queriedData.time}`);
     // Adjust heat exchanger ratio automatically
     if (queriedData.compressorRunning) await automatedHeatExchangerRatio();
     // Clean-up
     await recordsCleanup();
   } catch (exception) {
-    Logger.error('Query could not be completed: ', exception.message);
+    Logger.error(exception.message);
   }
 }, {});
 ```
@@ -76,9 +75,9 @@ cron.schedule('* * * * *', async () => {
 heatPumpRouter.get('/', authorize, async (request: Request, response: Response) => {
   // Optional query strings
   const date = {
-    year: String(request.query.year),
-    month: String(request.query.month),
-    day: String(request.query.day),
+    year: request.query.year ? String(request.query.year) : null,
+    month: request.query.month ? String(request.query.month) : null,
+    day: request.query.day ? String(request.query.day) : null,
   };
   const heatPumpData = await HeatPumpService.getData(date);
   return response.json(heatPumpData);
@@ -101,11 +100,13 @@ const startCircuitThree = async (): Promise<void> => {
 ## Requirements
 - Requires the following environment variables:
   ```
-  MONGODB_URI=  <URI for MongoDB>
-  PORT=3003
-  MODBUS_HOST=  <IP for ModBus connection>
-  MODBUS_PORT=  <Port for ModBus connection>
-  SESSIONS=  <Key for session authentication>
+  MONGODB_URI = <URI for MongoDB>
+  DEV_MONGODB_URI = <URI for development MongoDB>
+  TEST_MONGODB_URI = <URI for testing MongoDB>
+  PORT = 3003
+  MODBUS_HOST = <IP for ModBus connection>
+  MODBUS_PORT = <Port for ModBus connection>
+  SESSIONS = <Key for session authentication>
   ```
 - [modbus-serial](https://github.com/yaacov/node-modbus-serial#readme) installation requires some extra steps:
   - Install Windows Build Tools with ```npm install --global windows-build-tools```
