@@ -46,24 +46,19 @@ const calculateCompressorUsage = (
 export const parseCompressorUsage = async (
   compressorRunning: boolean, currentQueryTime: moment.Moment,
 ): Promise<number | null> => {
-  const latestHeatPumpEntry = await HeatPump.findOne({}, {}, { sort: { _id: -1 } });
+  const latestHeatPumpEntry = await HeatPump.findOne({}, {}, { sort: { time: -1 } });
 
   if (!latestHeatPumpEntry) {
     // There are no heat-pump entries to compare to yet
     return null;
   }
 
-  const lastStartEntry = await CompressorStatus.findOne({ type: 'start' }, {}, { sort: { _id: -1 } });
-  const lastStopEntry = await CompressorStatus.findOne({ type: 'end' }, {}, { sort: { _id: -1 } });
+  const lastStartEntry = await CompressorStatus.findOne({ type: 'start' }, {}, { sort: { time: -1 } });
+  const lastStopEntry = await CompressorStatus.findOne({ type: 'end' }, {}, { sort: { time: -1 } });
 
   let compressorUsage = null;
   if (compressorRunning && !latestHeatPumpEntry.compressorRunning) {
     // Current query represents the end of a cycle (running -> not running): e.g. RRRRRRNNNN = 60 %
-
-    // Calculate compressor usage during the last cycle
-    if (lastStartEntry && lastStopEntry) {
-      compressorUsage = calculateCompressorUsage(lastStartEntry.time, lastStopEntry.time, currentQueryTime);
-    }
 
     // Add an entry indicating that compressor started at this moment
     const cycleStartEntry = new CompressorStatus({
@@ -74,11 +69,6 @@ export const parseCompressorUsage = async (
   } else if (!compressorRunning && latestHeatPumpEntry.compressorRunning) {
     // Current query represents the end of a cycle (not running -> running): e.g. NNNNRRRRRR = 60 %
 
-    // Calculate compressor usage during the last cycle
-    if (lastStartEntry && lastStopEntry) {
-      compressorUsage = calculateCompressorUsage(lastStartEntry.time, lastStopEntry.time, currentQueryTime);
-    }
-
     // Add an entry indicating that compressor stopped at this moment
     const compressorStatusEntry = new CompressorStatus({
       type: 'end',
@@ -86,6 +76,14 @@ export const parseCompressorUsage = async (
     });
     await compressorStatusEntry.save();
   }
+
+  // Calculate compressor usage during the last cycle
+  if (lastStartEntry && lastStopEntry) {
+    compressorUsage = calculateCompressorUsage(
+      moment(lastStartEntry.time), moment(lastStopEntry.time), currentQueryTime,
+    );
+  }
+
   return compressorUsage;
 };
 
