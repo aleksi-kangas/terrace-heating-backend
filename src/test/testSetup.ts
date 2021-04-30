@@ -20,10 +20,11 @@ const initTestDatabase = async (): Promise<void> => {
     });
 
   const collectionNames = await Object.keys(mongoose.connection.collections);
-  collectionNames.forEach((collectionName: string) => {
+
+  await Promise.all(collectionNames.map(async (collectionName: string) => {
     const collection = mongoose.connection.collections[collectionName];
-    collection.deleteMany({});
-  });
+    await collection.deleteMany({});
+  }));
 };
 
 const insertTestUser = async (): Promise<UserDocument> => {
