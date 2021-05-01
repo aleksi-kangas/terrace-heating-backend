@@ -39,11 +39,12 @@ describe('getData', () => {
 
   it('returns entries after the given date threshold', async () => {
     const now = moment();
+    now.subtract(2, 'days');
 
     const result = await HeatPumpService.getData({
       year: `${now.year()}`,
       month: `0${now.month() + 1}`,
-      day: `${now.date() - 2}`,
+      day: `${now.date()}`,
     });
 
     expect(result).toHaveLength(2);
