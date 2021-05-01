@@ -1,5 +1,6 @@
 import moment from 'moment';
 import HeatPump from '../../models/heatPump';
+import CompressorStatus from '../../models/compressorStatus';
 
 /**
  * Helper function for signing an unsigned 16 bit number.
@@ -17,6 +18,7 @@ export const recordsCleanup = async (): Promise<void> => {
   const now = moment();
   const threshold = now.subtract(30, 'days');
   await HeatPump.deleteMany({ time: { $lt: threshold } });
+  await CompressorStatus.deleteMany({ time: { $lt: threshold } });
 };
 
 const Helpers = { signValue, recordsCleanup };
