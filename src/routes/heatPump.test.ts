@@ -15,7 +15,7 @@ const api = supertest(app);
 const testSession = session(app);
 let authenticatedAPI: any;
 
-beforeAll(async (done) => {
+beforeAll(async () => {
   await TestSetup.initTestDatabase();
   await TestSetup.insertTestUser();
 
@@ -25,12 +25,8 @@ beforeAll(async (done) => {
       username: TestConstants.initialUser.username,
       password: TestConstants.initialUser.password,
     })
-    .end((error: any) => {
-      if (error) {
-        return done();
-      }
+    .then(() => {
       authenticatedAPI = testSession;
-      return done();
     });
 });
 
